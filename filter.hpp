@@ -17,6 +17,7 @@ private:
 	int _mer_length;
 	int _low_level, _top_level;
 	int _low_interval;
+	bool _debug;
 	int _getScore(Read read);
 public:
 	Filter(int mer_length);
@@ -27,6 +28,7 @@ public:
 	mer_iterator begin();
 	mer_iterator end();
 	void getScoreList(Read read, int scores[]);
+	void setDebug(bool);
 };
 
 #endif

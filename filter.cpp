@@ -76,7 +76,7 @@ bool Filter::check(int scores[]) {
 			low++;
 		} else {
 			count++;
-			if (low > _low_interval)
+			if (low < _low_interval)
 				low = 0;
 		}
 	}
@@ -84,7 +84,8 @@ bool Filter::check(int scores[]) {
 		return false;
 	}
 	average /= count;
-	std::cout << low << "," << average << std::endl;
+	if (_debug)
+		std::cout << "# low_count=" << low << ", average=" << average << std::endl;
 	return low < _low_interval || average < _top_level;
 }
 
@@ -119,11 +120,15 @@ int Filter::_getScore(Read read) {
 	return score;
 }
 
+void Filter::setDebug(bool debug) {
+	_debug = debug;
+}
+
 int main(int argc, char** argv) {
 	std::string command(argv[0]);
 	std::string usage(
 			"usage: " + command + " filename mer_file" +
-			" [-m low_level] [-f low_frequence] [-t top_level]"
+			"[-d] [-m low_level] [-f low_frequence] [-t top_level]"
 			);
 	if (argc < 3) {
 		std::cout << usage << std::endl;
@@ -134,9 +139,13 @@ int main(int argc, char** argv) {
 
 	int top_level, low_level, low_interval;
 	int result;
-	while ((result = getopt(argc, argv, "f:m:t:")) != -1) {
+	bool debug(false);
+	while ((result = getopt(argc, argv, "df:m:t:")) != -1) {
 		try {
 			switch(result) {
+				case 'd':
+					debug = true;
+					break;
 				case 'm':
 					low_level = boost::lexical_cast<int>(optarg);
 					break;
@@ -159,6 +168,7 @@ int main(int argc, char** argv) {
 
 	Fasta *mers = new Fasta(mers_file);
 	Filter *filter = new Filter(0, low_level, low_interval, top_level);
+	filter->setDebug(debug);
 	while (!mers->eof()) {
 		FastaItem item = mers->getItem();
 		int score = 0;
@@ -171,7 +181,8 @@ int main(int argc, char** argv) {
 		filter->addMer(item.getRead(), score);
 	}
 
-	std::cout << "finish map" << std::endl;
+	if (debug)
+		std::cout << "finish map" << std::endl;
 
 	Fasta *fasta = new Fasta(filename);
 	while (! fasta->eof()) {
