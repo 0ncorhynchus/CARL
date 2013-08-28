@@ -68,24 +68,25 @@ bool Filter::check(int scores[]) {
 	int i(0), score;
 	while ((score = scores[i]) != -1) {
 		i++;
-		int score(scores[i]);
 		if (score == -1)
 			break;
-		average += score;
 		if (score <= _low_level) {
 			low++;
 		} else {
 			count++;
-			if (low < _low_interval)
+			average += score;
+			if (low < _low_interval) {
 				low = 0;
+			}
 		}
 	}
 	if (count == 0) {
 		return false;
 	}
 	average /= count;
-	if (_debug)
+	if (_debug) {
 		std::cout << "# low_count=" << low << ", average=" << average << std::endl;
+	}
 	return low < _low_interval || average < _top_level;
 }
 
@@ -128,7 +129,7 @@ int main(int argc, char** argv) {
 	std::string command(argv[0]);
 	std::string usage(
 			"usage: " + command + " filename mer_file" +
-			"[-d] [-m low_level] [-f low_frequence] [-t top_level]"
+			"[-d] [-f low_level] [-m low_frequence] [-t top_level]"
 			);
 	if (argc < 3) {
 		std::cout << usage << std::endl;
@@ -146,10 +147,10 @@ int main(int argc, char** argv) {
 				case 'd':
 					debug = true;
 					break;
-				case 'm':
+				case 'f':
 					low_level = boost::lexical_cast<int>(optarg);
 					break;
-				case 'f':
+				case 'm':
 					low_interval = boost::lexical_cast<int>(optarg);
 					break;
 				case 't':
