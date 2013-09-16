@@ -81,6 +81,9 @@ bool Filter::check(int scores[]) {
 		}
 	}
 	if (count == 0) {
+		if (_debug) {
+			std::cout << "# low_count=" << low << ", count = 0" << std::endl;
+		}
 		return false;
 	}
 	average /= count;
@@ -187,7 +190,8 @@ int main(int argc, char** argv) {
 
 	Fasta *fasta = new Fasta(filename);
 	while (! fasta->eof()) {
-		Read read = fasta->getItem().getRead();
+		FastaItem item = fasta->getItem();
+		Read read = item.getRead();
 		if (read.empty())
 			continue;
 		int length = read.length();
@@ -197,7 +201,7 @@ int main(int argc, char** argv) {
 		}
 		filter->getScoreList(read, scores);
 		if (filter->check(scores)) {
-			std::string info = fasta->getItem().getInfo();
+			std::string info = item.getInfo();
 			std::cout << ">" << info << std::endl;
 			std::cout << read << std::endl;
 		}
