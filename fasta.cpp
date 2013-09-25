@@ -24,7 +24,7 @@ FastaItem Fasta::getItem() {
 		if (regexec(&regexBuffer, info.c_str(), size, patternMatch, 0) == 0) {
 			int so = patternMatch[1].rm_so;
 			int eo = patternMatch[1].rm_eo;
-			if (so != -1 && eo != -1) {
+			if (so != -1 && so <= info.length() && eo >= so) {
 				info = info.substr(so, eo-so);
 			}
 		}

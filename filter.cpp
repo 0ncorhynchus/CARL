@@ -105,7 +105,7 @@ void Filter::getScoreList(Read read, int scores[]) {
 	int index = 0;
 	if (read.length() == 0 )
 		return;
-	for (int i = 0; i <= read.length()-_mer_length; i++) {
+	for (int i = 0; i < read.length()-_mer_length; i++) {
 		Read sub = read.substr(i, _mer_length);
 		if (sub.find("n") != std::string::npos)
 			continue;
