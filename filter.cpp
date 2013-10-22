@@ -115,6 +115,8 @@ void Filter::getScoreList(Read read, int scores[]) {
 			sub = read.substr(i, _mer_length);
 		} catch (const char* str) {
 			std::cerr << "Error in Filter::getScoreList()" << std::endl;
+			std::cerr << "\"read\": " << read << std::endl;
+			std::cerr << "\"i\": " << i << ", \"_mer_length\": " << _mer_length << std::endl;
 			std::cerr << str << std::endl;
 			break;
 		};
@@ -154,6 +156,7 @@ int main(int argc, char** argv) {
 
 	int top_level, low_level, low_interval;
 	int result;
+	int cpus(1);
 	bool debug(false);
 	while ((result = getopt(argc, argv, "df:m:t:")) != -1) {
 		try {
@@ -169,6 +172,9 @@ int main(int argc, char** argv) {
 					break;
 				case 't':
 					top_level = boost::lexical_cast<int>(optarg);
+					break;
+				case 'a':
+					cpus = boost::lexical_cast<int>(optarg);
 					break;
 				case ':':
 				case '?':
@@ -189,7 +195,7 @@ int main(int argc, char** argv) {
 	 * Importing mer from a file
 	 */
 	boost::thread_group threads;
-	for (int i(0); i < 2; i++)
+	for (int i(0); i < cpus; i++)
 	{
 		threads.create_thread([&] {
 					while (!mers->eof()) {

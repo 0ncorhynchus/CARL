@@ -31,6 +31,7 @@ FastaItem Fasta::getItem() {
 				info = info.substr(so, eo-so);
 			} catch(const char* str) {
 				std::cerr << "Error in Fasta::getItem()" << std::endl;
+				std::cerr << "\"info\": " << info << std::endl;
 				std::cerr << str << std::endl;
 			}
 		}
