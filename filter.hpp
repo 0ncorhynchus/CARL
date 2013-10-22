@@ -4,15 +4,17 @@
 #ifndef __FILTER_hpp
 #define __FILTER_hpp
 
-#include <boost/unordered_map.hpp>
+#include <mutex>
 #include <string>
+#include <map>
 #include "fasta.hpp"
 
-typedef boost::unordered_map<Read, int> mer_map;
+typedef std::map<Read, int> mer_map;
 typedef mer_map::iterator mer_iterator;
 
 class Filter {
 private:
+	mutable std::mutex m_mutex;
 	mer_map _mer_map;
 	int _mer_length;
 	int _low_level, _top_level;

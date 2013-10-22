@@ -1,5 +1,5 @@
 #VPATH = src include
-#CPPFLAGS = -I include
+CPPFLAGS = -std=c++0x
 LINK.o = g++
 
 .PHONY: all
@@ -10,5 +10,6 @@ clean:
 	rm -f *.o filter
 
 filter: fasta.o filter.o
+	g++ fasta.o filter.o -lboost_thread-mt -o filter
 fasta.o:
 filter.o:

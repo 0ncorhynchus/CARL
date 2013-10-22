@@ -4,6 +4,7 @@
 #ifndef __FASTA_hpp
 #define __FASTA_hpp
 
+#include <mutex>
 #include <fstream>
 #include <string>
 
@@ -22,6 +23,7 @@ public:
 class Fasta {
 private:
 	std::ifstream ifs;
+	mutable std::mutex m_mutex;
 public:
 	Fasta(std::string& filename);
 	~Fasta();

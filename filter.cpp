@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <getopt.h>
 #include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
 
 #include "filter.hpp"
 #include "fasta.hpp"
@@ -57,7 +58,8 @@ void Filter::setMerLength(int length) {
 }
 
 void Filter::addMer(Read read, int score) {
-	if (read.empty()) return;
+	std::lock_guard<std::mutex> lock(m_mutex);
+	if (read.empty() || score <= _low_level) return;
 	std::transform(read.begin(), read.end(), read.begin(), ::tolower);
 	_mer_map[read] = score;
 	setMerLength(read.length());
@@ -102,11 +104,20 @@ mer_iterator Filter::end() {
 }
 
 void Filter::getScoreList(Read read, int scores[]) {
+	//std::lock_guard<std::mutex> lock(m_mutex);
 	int index = 0;
-	if (read.length() == 0 )
+	if (read.length() < _mer_length)
+		scores[0] - -1;
 		return;
 	for (int i = 0; i < read.length()-_mer_length; i++) {
-		Read sub = read.substr(i, _mer_length);
+		Read sub;
+		try {
+			sub = read.substr(i, _mer_length);
+		} catch (const char* str) {
+			std::cerr << "Error in Filter::getScoreList()" << std::endl;
+			std::cerr << str << std::endl;
+			break;
+		};
 		if (sub.find("n") != std::string::npos)
 			continue;
 		int score = _getScore(sub);
@@ -119,7 +130,7 @@ void Filter::getScoreList(Read read, int scores[]) {
 int Filter::_getScore(Read read) {
 	std::transform(read.begin(), read.end(), read.begin(), ::tolower);
 	int score = _mer_map[read];
-	if (score == 0 )
+	if (score == 0)
 		score = _mer_map[getComplementRead(read)];
 	return score;
 }
@@ -132,7 +143,7 @@ int main(int argc, char** argv) {
 	std::string command(argv[0]);
 	std::string usage(
 			"usage: " + command + " filename mer_file" +
-			"[-d] [-f low_level] [-m low_frequence] [-t top_level]"
+			" [-d] [-f low_level] [-m low_frequence] [-t top_level]"
 			);
 	if (argc < 3) {
 		std::cout << usage << std::endl;
@@ -173,17 +184,30 @@ int main(int argc, char** argv) {
 	Fasta *mers = new Fasta(mers_file);
 	Filter *filter = new Filter(0, low_level, low_interval, top_level);
 	filter->setDebug(debug);
-	while (!mers->eof()) {
-		FastaItem item = mers->getItem();
-		int score = 0;
-		try {
-			std::string str = item.getInfo();
-			score = boost::lexical_cast<int>(str);
-		} catch(boost::bad_lexical_cast) {
-			continue;
-		}
-		filter->addMer(item.getRead(), score);
+
+	/*
+	 * Importing mer from a file
+	 */
+	boost::thread_group threads;
+	for (int i(0); i < 2; i++)
+	{
+		threads.create_thread([&] {
+					while (!mers->eof()) {
+						FastaItem item = mers->getItem();
+						int score = 0;
+						try {
+							std::string str = item.getInfo();
+							score = boost::lexical_cast<int>(str);
+						} catch(boost::bad_lexical_cast) {
+							continue;
+						}
+
+						filter->addMer(item.getRead(), score);
+					}
+				});
 	}
+	threads.join_all();
+
 
 	if (debug)
 		std::cout << "finish map" << std::endl;
