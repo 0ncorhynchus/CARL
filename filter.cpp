@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
 	std::string command(argv[0]);
 	std::string usage(
 			"usage: " + command + " filename mer_file" +
-			" [-d] [-f low_level] [-m low_frequence] [-t top_level]"
+			" [-d] [-f low_level] [-m low_frequence] [-t top_level] [-a threads]"
 			);
 	if (argc < 3) {
 		std::cout << usage << std::endl;
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 	int result;
 	int cpus(1);
 	bool debug(false);
-	while ((result = getopt(argc, argv, "df:m:t:")) != -1) {
+	while ((result = getopt(argc, argv, "df:m:t:a:")) != -1) {
 		try {
 			switch(result) {
 				case 'd':
