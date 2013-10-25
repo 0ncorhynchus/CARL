@@ -1,11 +1,18 @@
 #include "read.hpp"
 
-inline const unsigned int getReadIndex(unsigned int index) {
-	return index >> 2;
-}
+const char Read::bases[4] = {'a', 'c', 'g', 't'};
 
-inline const unsigned int getFlgsIndex(unsigned int index) {
-	return index >> 3;
+std::size_t hash_value(const Read& read) {
+	std::size_t h(1);
+	for (int i(0); i < read.size(); i++) {
+		h = h << 2;
+		int base = read.getBaseAt(i);
+		if (base & 4 == 1) {
+			return 0;
+		}
+		h += (std::size_t)(base & 3);
+	}
+	return h;
 }
 
 Read::Read(const std::string sequence) : _size(sequence.size()) {
@@ -15,8 +22,14 @@ Read::Read(const std::string sequence) : _size(sequence.size()) {
 		return;
 	}
 
-	this->_read = new unsigned char[((this->size() - 1) >> 2) + 1];
-	this->_flgs = new unsigned char[((this->size() - 1) >> 3) + 1];
+	this->_read = new unsigned char[this->r_size()];
+	this->_flgs = new unsigned char[this->f_size()];
+	for (int i(0); i < this->r_size(); i++) {
+		this->_read[i] = 0;
+	}
+	for (int i(0); i < this->f_size(); i++) {
+		this->_flgs[i] = 0;
+	}
 
 	for (int i(0); i < this->size(); i++)
 	{
@@ -48,10 +61,12 @@ Read::Read(const std::string sequence) : _size(sequence.size()) {
 }
 
 Read::Read(const Read& read) : _size(read.size()) {
-	int r_length(sizeof(read._read));
-	int f_length(sizeof(read._flgs));
+	int r_length(read.r_size());
+	int f_length(read.f_size());
+
 	this->_read = new unsigned char[r_length];
 	this->_flgs = new unsigned char[f_length];
+
 	for (int i(0); i < r_length; i++) {
 		this->_read[i] = read._read[i];
 	}
@@ -65,14 +80,30 @@ Read::Read(const unsigned int size) : _size(size) {
 		this->_read = new unsigned char[0];
 		this->_flgs = new unsigned char[0];
 	} else {
-		this->_read = new unsigned char[((this->size() - 1) >> 2) + 1];
-		this->_flgs = new unsigned char[((this->size() - 1) >> 3) + 1];
+		this->_read = new unsigned char[this->r_size()];
+		this->_flgs = new unsigned char[this->f_size()];
 	}
 }
 
 Read::~Read() {
 	delete[] this->_read;
 	delete[] this->_flgs;
+}
+
+unsigned int Read::r_size() const {
+	if (this->size() == 0) {
+		return 0;
+	}
+	int size(((this->size() - 1) >> 2) + 1);
+	return size;
+}
+
+unsigned int Read::f_size() const {
+	if (this->size() == 0) {
+		return 0;
+	}
+	int size(((this->size() - 1) >> 3) + 1);
+	return size;
 }
 
 unsigned int Read::size() const {
@@ -108,8 +139,19 @@ void Read::setBaseAt(const unsigned int index, const unsigned int value) throw(s
 	this->_flgs[f_index] += ((value >> 2) & 1) << f_order;
 }
 
+bool Read::isDefinite() const {
+	bool flg(true);
+	for (int i(0); i < this->f_size(); i++) {
+		if ((int)(this->_flgs[i]) != 0) {
+			flg = false;
+			break;
+		}
+	}
+	return flg;
+}
+
 Read Read::sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range){
-	if (start < 0 || length <= 0 || start + length >= this->size())
+	if (start < 0 || length <= 0 || start + length > this->size())
 		throw std::out_of_range("out of range in sub()");
 
 	Read retval(length);
@@ -125,61 +167,27 @@ Read Read::complement() const {
 		return Read(0);
 
 	Read retval(this->size());
-	for (int i(0); i < sizeof(this->_read); i++) {
+	for (int i(0); i < this->r_size(); i++) {
 		retval._read[i] = ~this->_read[i];
 	}
-	for (int i(0); i < sizeof(this->_flgs); i++) {
+	for (int i(0); i < this->f_size(); i++) {
 		retval._flgs[i] = this->_flgs[i];
 	}
 	return retval;
 }
 
 std::string Read::tostring() {
-	if (this->size() == 0)
-		return std::string("");
-	char* c_str = new char[this->size()];
-	for (int i(0); i < this->size(); i++) {
+	int size(this->size());
+	std::string str("");
+
+	for (int i(0); i < size; i++) {
 		int bp(this->getBaseAt(i));
 		char ch('n');
 		if (bp >= 0 && bp < 4)
 			ch = Read::bases[bp];
-		c_str[i] = ch;
+		str += ch;
 	}
-	std::string str(c_str);
-	delete[] c_str;
+
 	return str;
-}
-
-#include <random>
-#include <iostream>
-int main() {
-	char bases[5] = {'a', 'c', 'g', 't', 'n'};
-
-	int length(13);
-	char c_seq[length];
-	std::random_device rd;
-	std::mt19937 mt(rd());
-	std::uniform_int_distribution<int> rnd(0, 4);
-	for (int i(0); i < length; i++) {
-		c_seq[i] = bases[rnd(mt)];
-	}
-	std::string seq(c_seq);
-	std::cout << "====================" << std::endl;
-	Read read(seq);
-	std::cout << "ORIGIN: " << seq << std::endl;
-	std::cout << "RESULT: " << read.tostring() <<  std::endl;
-
-	std::cout << "====================" << std::endl;
-	std::cout << "SUB: from 2 to 7" << std::endl;
-	Read sub(read.sub(2, 6));
-	std::cout << "ORIGIN: " << seq.substr(2, 6) << std::endl;
-	std::cout << "RESULT: " << sub.tostring() << std::endl;
-
-	std::cout << "====================" << std::endl;
-	std::cout << "COMPLEMENT" << std::endl;
-	Read comp(read.complement());
-	std::cout << "ORIGIN: " << seq << std::endl;
-	std::cout << "RESULT: " << comp.tostring() << std::endl;
-
 }
 

@@ -4,26 +4,25 @@
 #ifndef __FASTA_hpp
 #define __FASTA_hpp
 
-#include <mutex>
 #include <fstream>
 #include <string>
-
-typedef std::string Read;
+#include "read.hpp"
 
 class FastaItem {
 private:
 	std::string info;
 	Read read;
 public:
-	FastaItem(std::string info, Read read);
-	std::string getInfo();
-	Read getRead();
+	FastaItem(std::string info, std::string sequence);
+	FastaItem(const FastaItem& item);
+	~FastaItem();
+	std::string getInfo() const;
+	const Read& getRead() const;
 };
 
 class Fasta {
 private:
 	std::ifstream ifs;
-	mutable std::mutex m_mutex;
 public:
 	Fasta(std::string& filename);
 	~Fasta();

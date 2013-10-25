@@ -9,10 +9,14 @@
 
 class Read {
 private:
+	static const char bases[4];
+
 	unsigned char *_read;
 	unsigned char *_flgs;
 	const unsigned int _size;
-	static char bases[4];
+
+	unsigned int r_size() const;
+	unsigned int f_size() const;
 
 public:
 	Read(const std::string sequence);
@@ -20,11 +24,12 @@ public:
 	~Read();
 	unsigned int size() const;
 	int getBaseAt(const unsigned int index) const throw(std::out_of_range);
+	bool isDefinite() const;
 	Read sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range);
 	Read complement() const;
 	std::string tostring();
 
-	bool operator==(const Read& read) {
+	bool operator==(const Read& read) const {
 		if (this->size() != read.size())
 			return false;
 		bool flg(true);
@@ -42,19 +47,6 @@ private:
 	void setBaseAt(const unsigned int index, const unsigned int value) throw(std::out_of_range);
 };
 
-char Read::bases[4] = {'a', 'c', 'g', 't'};
-
-std::size_t hash_value(const Read& read) {
-	std::size_t h = 1;
-	for (int i(0); i < read.size(); i++) {
-		h = h << 2;
-		int base = read.getBaseAt(i);
-		if (base & 4 == 1) {
-			return 0;
-		}
-		h += (std::size_t)(base & 3);
-	}
-	return h;
-}
+std::size_t hash_value(const Read& read);
 
 #endif
