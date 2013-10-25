@@ -1,3 +1,5 @@
 *.o
 filter
+read
 db
+data
