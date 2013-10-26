@@ -21,9 +21,15 @@ private:
 
 public:
 	Filter(int low_level, int low_interval, int top_level);
-	bool addMer(const Read read, int score);
+	Filter(const Filter& filter);
+	Filter();
+	bool insertMer(const Read read, int score);
+	bool insertMers(const Filter& filter);
 	bool check(Read read) const;
 	void setDebug(bool);
+	int size() {
+		return this->_mer_map.size();
+	}
 };
 
 #endif

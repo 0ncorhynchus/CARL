@@ -30,7 +30,14 @@ const Read& FastaItem::getRead() const {
 /*
  * Fasta
  */
-Fasta::Fasta(std::string& filename) : ifs(filename.c_str()) {
+Fasta::Fasta(const std::string& filename) {
+	this->filename = filename;
+	this->ifs.open(this->filename);
+}
+
+Fasta::Fasta(const Fasta& fasta) {
+	this->filename = fasta.filename;
+	ifs.open(this->filename);
 }
 
 Fasta::~Fasta() {

@@ -22,9 +22,11 @@ public:
 
 class Fasta {
 private:
+	std::string filename;
 	std::ifstream ifs;
 public:
-	Fasta(std::string& filename);
+	Fasta(const std::string& filename);
+	Fasta(const Fasta& fasta);
 	~Fasta();
 	FastaItem getItem();
 	bool eof();
