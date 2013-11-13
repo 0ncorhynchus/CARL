@@ -166,12 +166,13 @@ Read Read::complement() const {
 	if (this->size() == 0)
 		return Read(0);
 
-	Read retval(this->size());
+	Read tmp(*this);
 	for (int i(0); i < this->r_size(); i++) {
-		retval._read[i] = ~this->_read[i];
+		tmp._read[i] = ~this->_read[i];
 	}
-	for (int i(0); i < this->f_size(); i++) {
-		retval._flgs[i] = this->_flgs[i];
+	Read retval(tmp.size());
+	for (int i(0); i < tmp.size(); i++) {
+		retval.setBaseAt(i, tmp.getBaseAt(tmp.size() - i - 1));
 	}
 	return retval;
 }

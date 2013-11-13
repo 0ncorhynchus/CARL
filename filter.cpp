@@ -31,7 +31,8 @@ Filter::Filter() {
 bool Filter::insertMer(const Read read, int score) {
 	if (this->_mer_length == 0) {
 		this->_mer_length = read.size();
-	} else if (read.size() != this->_mer_length || score <= this->_low_level) {
+	}
+	if (read.size() != this->_mer_length || (!_debug && score <= this->_low_level)) {
 		return false;
 	}
 
@@ -52,17 +53,20 @@ bool Filter::insertMers(const Filter& filter) {
 	return true;
 }
 
-bool Filter::check(Read read) const {
+bool Filter::check(const Read read) const {
 	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
 		return false;
 	}
 	int low_count(0), total(0), count(0);
 	for (int i(0); i < read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
-		if (!read.isDefinite()) {
+		if (!sub.isDefinite()) {
 			continue;
 		}
 		int score(this->_getScore(sub));
+		if (_debug && score == -1) {
+			continue;
+		}
 		if (score <= this->_low_level) {
 			low_count++;
 		} else {
@@ -76,13 +80,14 @@ bool Filter::check(Read read) const {
 
 	if (count == 0) {
 		if (_debug) {
-			std::cerr << "# low_count=" << low_count << ", count = 0" << std::endl;
+			std::cerr << "# low_count = " << low_count << ", count = 0" << std::endl;
+			std::cerr << "# read size = " << read.size() << std::endl;
 		}
-		return false;
+		return true;
 	}
 
 	if (_debug) {
-		std::cerr << "# low_count=" << low_count << ", total=" << total << std::endl;
+		std::cerr << "# low_count = " << low_count << ", total = " << total << std::endl;
 	}
 	return low_count < this->_low_interval || total < _top_level * count;
 }
@@ -96,6 +101,8 @@ int Filter::_getScore(Read read) const {
 		mer_map::const_iterator comp(_mer_map.find(read.complement()));
 		if (comp != _mer_map.end()) {
 			score = (*comp).second;
+		} else {
+			return -1;
 		}
 	}
 	return score;

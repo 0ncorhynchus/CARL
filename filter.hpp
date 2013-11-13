@@ -25,7 +25,7 @@ public:
 	Filter();
 	bool insertMer(const Read read, int score);
 	bool insertMers(const Filter& filter);
-	bool check(Read read) const;
+	bool check(const Read read) const;
 	void setDebug(bool);
 	int size() {
 		return this->_mer_map.size();

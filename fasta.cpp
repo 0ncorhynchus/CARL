@@ -44,13 +44,12 @@ Fasta::~Fasta() {
 	ifs.close();
 }
 
-
-FastaItem Fasta::getItem() {
+std::pair<std::string, std::string> Fasta::getItemString() {
 	std::string info, sequence;
 	std::getline(ifs, info);
 	std::getline(ifs, sequence);
 
-	const char regex[] = "^>\\b(.*)";
+	const char regex[] = "^>(.*)";
 	regex_t regexBuffer;
 
 	if (regcomp(&regexBuffer, regex, REG_EXTENDED | REG_NEWLINE) == 0) {
@@ -75,6 +74,12 @@ FastaItem Fasta::getItem() {
 
 	FastaItem item(info, sequence);
 	regfree(&regexBuffer);
+	return std::pair<std::string, std::string>(info, sequence);
+}
+
+FastaItem Fasta::getItem() {
+	std::pair<std::string, std::string> itemstr(this->getItemString());
+	FastaItem item(itemstr.first, itemstr.second);
 	return item;
 }
 

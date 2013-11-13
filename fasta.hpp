@@ -29,6 +29,7 @@ public:
 	Fasta(const Fasta& fasta);
 	~Fasta();
 	FastaItem getItem();
+	std::pair<std::string, std::string> getItemString();
 	bool eof();
 };
 
