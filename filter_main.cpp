@@ -96,7 +96,15 @@ int main(int argc, char** argv) {
 		for (int i(0); i < cpus; i++)
 		{
 			std::ostringstream oss;
-			oss << "/tmp/filter_read_split" << i;
+			int sindex(mers_file.find_last_of("/") + 1);
+			int eindex(mers_file.find_last_of("."));
+			int sublen(0);
+			if (eindex == std::string::npos || eindex < sindex) {
+				sublen = mers_file.length() - sindex;
+			} else {
+				sublen = eindex - sindex;
+			}
+			oss << "/tmp/filter_read_split_" << mers_file.substr(sindex, sublen) << "_" << low_level << "_" << low_interval << "_" << top_level << "_" << i;
 			filenames[i] = oss.str();
 
 			std::ofstream ofs(filenames[i]);
