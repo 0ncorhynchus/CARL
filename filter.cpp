@@ -56,6 +56,9 @@ bool Filter::check(Read read) const {
 	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
 		return false;
 	}
+	if (_debug) {
+		std::cerr << std::endl;
+	}
 	int low_count(0), total(0), count(0);
 	for (int i(0); i < read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
@@ -63,6 +66,9 @@ bool Filter::check(Read read) const {
 			continue;
 		}
 		int score(this->_getScore(sub));
+		if (_debug) {
+			std::cerr << " " << score;
+		}
 		if (score <= this->_low_level) {
 			low_count++;
 		} else {
@@ -72,6 +78,9 @@ bool Filter::check(Read read) const {
 				low_count = 0;
 			}
 		}
+	}
+	if (_debug) {
+		std::cerr << std::endl;
 	}
 
 	if (count == 0) {
