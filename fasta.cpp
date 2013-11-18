@@ -46,6 +46,12 @@ Fasta::~Fasta() {
 
 
 FastaItem Fasta::getItem() {
+	std::pair<std::string, std::string> strings(this->getItemStrings());
+	FastaItem item(strings.first, strings.second);
+	return item;
+}
+
+std::pair<std::string, std::string> Fasta::getItemStrings() {
 	std::string info, sequence;
 	std::getline(ifs, info);
 	std::getline(ifs, sequence);
@@ -73,9 +79,9 @@ FastaItem Fasta::getItem() {
 		}
 	}
 
-	FastaItem item(info, sequence);
+	std::pair<std::string, std::string> retval(info, sequence);
 	regfree(&regexBuffer);
-	return item;
+	return retval;
 }
 
 bool Fasta::eof() {

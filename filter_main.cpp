@@ -135,16 +135,16 @@ int main(int argc, char** argv) {
 
 	Fasta *fasta = new Fasta(filename);
 	while (! fasta->eof()) {
-		FastaItem item(fasta->getItem());
-		Read read(item.getRead());
+		std::pair<std::string, std::string> item(fasta->getItemStrings());
+		Read read(item.second);
 
 		if (read.size() == 0)
 			continue;
 
 		if (filter->check(read)) {
-			std::string info = item.getInfo();
+			std::string info = item.first;
 			std::cout << ">" << info << std::endl;
-			std::cout << read.tostring() << std::endl;
+			std::cout << item.second << std::endl;
 		}
 	}
 
