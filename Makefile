@@ -3,7 +3,7 @@ CPPFLAGS = -std=c++0x -g
 LINK.o = g++
 
 .PHONY: all
-all: filter
+all: filter read_test
 
 .PHONY: clean
 clean:

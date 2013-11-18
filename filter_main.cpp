@@ -128,8 +128,10 @@ int main(int argc, char** argv) {
 		delete[] filter_set;
 	}
 
-	if (debug)
+	if (debug) {
 		std::cerr << "finish map" << std::endl;
+		std::cerr << filter->size() << std::endl;
+	}
 
 	Fasta *fasta = new Fasta(filename);
 	while (! fasta->eof()) {

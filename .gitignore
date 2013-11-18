@@ -1,5 +1,6 @@
 *.o
 filter
+read_test
 read
 db
 data
