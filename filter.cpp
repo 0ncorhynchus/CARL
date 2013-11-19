@@ -83,8 +83,10 @@ bool Filter::check(Read read) const {
 	for (int i(0); i < read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
 		if (!sub.isDefinite()) {
-			std::cerr << "Including other character, It will be passed" << std::endl;
-			std::cerr << sub.tostring() << std::endl;
+			if (_debug) {
+				std::cerr << "Including other character, It will be passed" << std::endl;
+				std::cerr << sub.tostring() << std::endl;
+			}
 			continue;
 		}
 		int score(this->_getScore(sub));

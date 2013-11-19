@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 
 	if (debug) {
 		std::cerr << "finish map" << std::endl;
-		std::cerr << filter->size() << std::endl;
+		std::cerr << "map size: " <<  filter->size() << std::endl;
 	}
 
 	Fasta *fasta = new Fasta(filename);
