@@ -115,6 +115,7 @@ int main(int argc, char** argv) {
 			ofs.close();
 
 			filter_set[i] = Filter(low_level, low_interval, top_level);
+			filter_set[i].setDebug(debug);
 			threads.create_thread(boost::bind(&run, filenames[i] , std::ref(filter_set[i])));
 		}
 		ifs.close();
