@@ -35,7 +35,7 @@ void check(const std::string infile, std::ostream& str, const Filter& filter, bo
 	std::cerr << &filter << std::endl;
 	Fasta fasta(infile);
 	while (!fasta.eof()) {
-		std::pair<std::string, std::string> item(fasta.getItemString());
+		std::pair<std::string, std::string> item(fasta.getItemStrings());
 		Read read(item.second);
 
 		if (read.size() == 0)
@@ -111,6 +111,29 @@ int main(int argc, char** argv) {
 	/*
 	 * Importing mer from a file
 	 */
+
+	std::ostringstream oss;
+	int mers_sindex(mers_file.find_last_of("/") + 1);
+	int mers_eindex(mers_file.find_last_of("."));
+	int mers_sublen(0);
+	if (mers_eindex == std::string::npos || mers_eindex < mers_sindex) {
+		mers_sublen = mers_file.length() - mers_sindex;
+	} else {
+		mers_sublen = mers_eindex - mers_sindex;
+	}
+	int file_sindex(filename.find_last_of("/") + 1);
+	int file_eindex(filename.find_last_of("."));
+	int file_sublen(0);
+	if (file_eindex == std::string::npos || file_eindex < file_sindex) {
+		file_sublen = filename.length() - file_sindex;
+	} else {
+		file_sublen = file_eindex - file_sindex;
+	}
+	oss << mers_file.substr(mers_sindex, mers_sublen) << "_" << filename.substr(file_sindex, file_sublen);
+	oss <<  "_" << low_level << "_" << low_interval << "_" << top_level << std::flush;
+	std::string identifier(oss.str());
+
+
 	if (cpus == 1) {
 		insertMer(mers_file, *filter, debug);
 	} else {
@@ -130,7 +153,15 @@ int main(int argc, char** argv) {
 		for (int i(0); i < cpus; i++)
 		{
 			std::ostringstream oss;
-			oss << "/tmp/filter_read_mer_split" << i;
+			int sindex(mers_file.find_last_of("/") + 1);
+			int eindex(mers_file.find_last_of("."));
+			int sublen(0);
+			if (eindex == std::string::npos || eindex < sindex) {
+				sublen = mers_file.length() - sindex;
+			} else {
+				sublen = eindex - sindex;
+			}
+			oss << "/tmp/filter_read_splita_" << identifier << "_" << i;
 			filenames[i] = oss.str();
 
 			std::ofstream ofs(filenames[i]);
@@ -163,7 +194,7 @@ int main(int argc, char** argv) {
 
 	if (debug) {
 		std::cerr << "finish map" << std::endl;
-		std::cerr << "filter->size() = " << filter->size() << std::endl;
+		std::cerr << "map size: " <<  filter->size() << std::endl;
 	}
 
 	if (cpub == 1) {
@@ -173,6 +204,7 @@ int main(int argc, char** argv) {
 		std::string *outfiles = new std::string[cpub];
 		std::ofstream *outstreams = new std::ofstream[cpub];
 		Filter *filter_set = new Filter[cpub];
+
 		boost::thread_group threads;
 		std::ifstream ifs(filename);
 		std::string buf;
@@ -187,8 +219,8 @@ int main(int argc, char** argv) {
 		for (int i(0); i < cpub; i++)
 		{
 			std::ostringstream ioss, ooss;
-			ioss << "/tmp/filter_read_split" << i;
-			ooss << "/tmp/filter_read_split_out" << i;
+			ioss << "/tmp/filter_read_splitb_" << identifier <<  "_" << i;
+			ooss << "/tmp/filter_read_split_out_" << identifier << "_" << i;
 			infiles[i] = ioss.str();
 			outfiles[i] = ooss.str();
 
@@ -214,8 +246,9 @@ int main(int argc, char** argv) {
 			std::ifstream tmpifs(outfiles[i].c_str());
 			std::string buffer;
 			while (tmpifs && !tmpifs.eof()) {
-				getline(tmpifs, buffer);
-				std::cout << buffer << std::endl;
+				if (getline(tmpifs, buffer)) {
+					std::cout << buffer << std::endl;
+				}
 			}
 			tmpifs.close();
 			remove(infiles[i].c_str());

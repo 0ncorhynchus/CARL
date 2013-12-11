@@ -80,8 +80,16 @@ Read::Read(const unsigned int size) : _size(size) {
 		this->_read = new unsigned char[0];
 		this->_flgs = new unsigned char[0];
 	} else {
-		this->_read = new unsigned char[this->r_size()];
-		this->_flgs = new unsigned char[this->f_size()];
+		int r_length(this->r_size());
+		int f_length(this->f_size());
+		this->_read = new unsigned char[r_length];
+		this->_flgs = new unsigned char[f_length];
+		for (int i(0); i < r_length; i++) {
+			this->_read[i] = 0;
+		}
+		for (int i(0); i < f_length; i++) {
+			this->_flgs[i] = 0;
+		}
 	}
 }
 
@@ -110,18 +118,19 @@ unsigned int Read::size() const {
 	return this->_size;
 }
 
-int Read::getBaseAt(const unsigned int index) const throw(std::out_of_range) {
+unsigned int Read::getBaseAt(const unsigned int index) const throw(std::out_of_range) {
 	if (index >= this->size())
 		throw std::out_of_range("out of range in getBaseAt()");
+	int score(0);
 
 	const int f_index(index >> 3);
 	const int f_order(index & 7);
-	if ((this->_flgs[f_index] >> f_order) & 1 == 1)
-		return -1;
+	score += ((this->_flgs[f_index] >> f_order) & 1) << 2;
 
 	const int r_index(index >> 2);
-	const int r_order((index & 3) * 2);
-	return (this->_read[r_index] >> r_order) & 3;
+	const int r_order((index & 3) << 1);
+	score += (this->_read[r_index] >> r_order) & 3;
+	return score;
 }
 
 void Read::setBaseAt(const unsigned int index, const unsigned int value) throw(std::out_of_range) {
@@ -129,7 +138,7 @@ void Read::setBaseAt(const unsigned int index, const unsigned int value) throw(s
 		throw std::out_of_range("out of range in setBaseAt()");
 
 	const int r_index(index >> 2);
-	const int r_order((index & 3) * 2);
+	const int r_order((index & 3) << 1);
 	this->_read[r_index] &= 255 - (3 << r_order);
 	this->_read[r_index] += (value & 3) << r_order;
 
@@ -142,7 +151,7 @@ void Read::setBaseAt(const unsigned int index, const unsigned int value) throw(s
 bool Read::isDefinite() const {
 	bool flg(true);
 	for (int i(0); i < this->f_size(); i++) {
-		if ((int)(this->_flgs[i]) != 0) {
+		if ((unsigned int)(this->_flgs[i]) != 0) {
 			flg = false;
 			break;
 		}
@@ -166,13 +175,14 @@ Read Read::complement() const {
 	if (this->size() == 0)
 		return Read(0);
 
-	Read tmp(*this);
-	for (int i(0); i < this->r_size(); i++) {
-		tmp._read[i] = ~this->_read[i];
+	Read retval(this->size());
+	for (int i(0); i < this->size(); i++) {
+		unsigned int base(this->getBaseAt(i));
+		retval.setBaseAt(this->size()-i-1, base);
 	}
-	Read retval(tmp.size());
-	for (int i(0); i < tmp.size(); i++) {
-		retval.setBaseAt(i, tmp.getBaseAt(tmp.size() - i - 1));
+
+	for (int i(0); i < retval.r_size(); i++) {
+		retval._read[i] = ~retval._read[i];
 	}
 	return retval;
 }

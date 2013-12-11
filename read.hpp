@@ -23,7 +23,7 @@ public:
 	Read(const Read& read);
 	~Read();
 	unsigned int size() const;
-	int getBaseAt(const unsigned int index) const throw(std::out_of_range);
+	unsigned int getBaseAt(const unsigned int index) const throw(std::out_of_range);
 	bool isDefinite() const;
 	Read sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range);
 	Read complement() const;

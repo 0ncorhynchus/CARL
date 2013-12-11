@@ -31,8 +31,17 @@ Filter::Filter() {
 bool Filter::insertMer(const Read read, int score) {
 	if (this->_mer_length == 0) {
 		this->_mer_length = read.size();
-	}
-	if (read.size() != this->_mer_length || (!_debug && score <= this->_low_level)) {
+	} else if (read.size() != this->_mer_length) {
+		if (_debug) {
+			std::cerr << "Mer Length Error: " << this->_mer_length;
+			std::cerr << ", " << read.size() << std::endl;
+		}
+		return false;
+	} else if (score <= this->_low_level) {
+		if (_debug) {
+			std::cerr << "Low Level Error: " << this->_low_level;
+			std::cerr << ", " << score << std::endl;
+		}
 		return false;
 	}
 
@@ -41,11 +50,20 @@ bool Filter::insertMer(const Read read, int score) {
 }
 
 bool Filter::insertMers(const Filter& filter) {
-	if (filter._low_level != this->_low_level)
+	if (filter._low_level != this->_low_level) {
+		if (_debug) {
+			std::cerr << "Low Level Error: " << this->_low_level;
+			std::cerr << ", " << filter._low_level << std::endl;
+		}
 		return false;
+	}
 	if (this->_mer_length == 0) {
 		this->_mer_length = filter._mer_length;
 	} else if (filter._mer_length != this->_mer_length) {
+		if (_debug) {
+			std::cerr << "Mer Length Error: " << this->_mer_length;
+			std::cerr << ", " << filter._mer_length << std::endl;
+		}
 		return false;
 	}
 
@@ -57,15 +75,23 @@ bool Filter::check(const Read read) const {
 	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
 		return false;
 	}
+	if (_debug) {
+		std::cerr << std::endl;
+		std::cerr << read.size() - this->_mer_length << std::endl;
+	}
 	int low_count(0), total(0), count(0);
 	for (int i(0); i < read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
 		if (!sub.isDefinite()) {
+			if (_debug) {
+				std::cerr << "Including other character, It will be passed" << std::endl;
+				std::cerr << sub.tostring() << std::endl;
+			}
 			continue;
 		}
 		int score(this->_getScore(sub));
-		if (_debug && score == -1) {
-			continue;
+		if (_debug) {
+			std::cerr << " " << score;
 		}
 		if (score <= this->_low_level) {
 			low_count++;
@@ -76,6 +102,9 @@ bool Filter::check(const Read read) const {
 				low_count = 0;
 			}
 		}
+	}
+	if (_debug) {
+		std::cerr << std::endl;
 	}
 
 	if (count == 0) {
