@@ -16,11 +16,12 @@ private:
 	int _mer_length;
 	int _low_level, _top_level;
 	int _low_interval;
+	double _ratio;
 	bool _debug;
 	int _getScore(Read read) const;
 
 public:
-	Filter(int low_level, int low_interval, int top_level);
+	Filter(int low_level, int low_interval, int top_level, double ratio);
 	Filter(const Filter& filter);
 	Filter();
 	bool insertMer(const Read read, int score);

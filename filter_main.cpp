@@ -64,10 +64,11 @@ int main(int argc, char** argv) {
 	std::string mers_file(argv[2]);
 
 	unsigned int top_level, low_level(0), low_interval;
+	double ratio;
 	int result;
 	unsigned int cpus(1), cpub(1);
 	bool debug(false);
-	while ((result = getopt(argc, argv, "df:m:t:a:b:")) != -1) {
+	while ((result = getopt(argc, argv, "df:m:t:r:a:b:")) != -1) {
 		try {
 			switch(result) {
 				case 'd':
@@ -81,6 +82,9 @@ int main(int argc, char** argv) {
 					break;
 				case 't':
 					top_level = boost::lexical_cast<unsigned int>(optarg);
+					break;
+				case 'r':
+					ratio = boost::lexical_cast<double>(optarg);
 					break;
 				case 'a':
 					cpus = boost::lexical_cast<unsigned int>(optarg);
@@ -105,7 +109,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	Filter *filter = new Filter(low_level, low_interval, top_level);
+	Filter *filter = new Filter(low_level, low_interval, top_level, ratio);
 	filter->setDebug(debug);
 
 	/*
@@ -173,7 +177,7 @@ int main(int argc, char** argv) {
 			}
 			ofs.close();
 
-			filter_set[i] = Filter(low_level, low_interval, top_level);
+			filter_set[i] = Filter(low_level, low_interval, top_level, ratio);
 			filter_set[i].setDebug(debug);
 			threads.create_thread(boost::bind(&insertMer, filenames[i] , std::ref(filter_set[i]), debug));
 		}

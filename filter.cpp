@@ -5,11 +5,12 @@
 #include <string>
 #include "filter.hpp"
 
-Filter::Filter(int low_level, int low_interval, int top_level) {
+Filter::Filter(int low_level, int low_interval, int top_level, double ratio) {
 	this->_mer_length = 0;
 	this->_low_level = low_level;
 	this->_low_interval = low_interval;
 	this->_top_level = top_level;
+	this->_ratio = ratio;
 }
 
 Filter::Filter(const Filter& filter) {
@@ -17,6 +18,8 @@ Filter::Filter(const Filter& filter) {
 	this->_low_level = filter._low_level;
 	this->_low_interval = filter._low_interval;
 	this->_top_level = filter._top_level;
+	this->_ratio = filter._ratio;
+
 	this->_mer_map = filter._mer_map;
 	this->_debug = filter._debug;
 }
@@ -26,6 +29,7 @@ Filter::Filter() {
 	this->_low_level = 0;
 	this->_low_interval = 0;
 	this->_top_level = 0;
+	this->_ratio = 0.;
 }
 
 bool Filter::insertMer(const Read read, int score) {
@@ -79,7 +83,9 @@ bool Filter::check(const Read read) const {
 		std::cerr << std::endl;
 		std::cerr << read.size() - this->_mer_length << std::endl;
 	}
-	int low_count(0), total(0), count(0);
+
+	int low_total(0), low_count(0), high_total(0), high_count(0);
+
 	for (int i(0); i < read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
 		if (!sub.isDefinite()) {
@@ -95,9 +101,10 @@ bool Filter::check(const Read read) const {
 		}
 		if (score <= this->_low_level) {
 			low_count++;
+			low_total += score;
 		} else {
-			count++;
-			total += score;
+			high_count++;
+			high_total += score;
 			if (low_count < this->_low_interval) {
 				low_count = 0;
 			}
@@ -107,18 +114,21 @@ bool Filter::check(const Read read) const {
 		std::cerr << std::endl;
 	}
 
-	if (count == 0) {
+	if (high_count == 0) {
 		if (_debug) {
-			std::cerr << "# low_count = " << low_count << ", count = 0" << std::endl;
+			std::cerr << "# low_count = " << low_count << ", high_count = 0" << std::endl;
 			std::cerr << "# read size = " << read.size() << std::endl;
 		}
 		return true;
 	}
 
 	if (_debug) {
-		std::cerr << "# low_count = " << low_count << ", total = " << total << std::endl;
+		std::cerr << "# low_count = " << low_count << ", high_total = " << high_total << std::endl;
 	}
-	return low_count < this->_low_interval || total < _top_level * count;
+	double high_average(double(high_total)/high_count),
+		   low_average(double(low_total)/low_count);
+	return low_count < this->_low_interval || high_average < _top_level ||
+		high_average < low_average * _ratio;
 }
 
 int Filter::_getScore(Read read) const {
