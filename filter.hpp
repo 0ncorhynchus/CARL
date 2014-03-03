@@ -5,6 +5,7 @@
 #define __FILTER_hpp
 
 #include <string>
+#include <boost/lexical_cast.hpp>
 #include <boost/unordered_map.hpp>
 #include "fasta.hpp"
 
@@ -18,15 +19,17 @@ private:
 	int _low_interval;
 	double _ratio;
 	bool _debug;
-	int _getScore(Read read) const;
+	int _getScore(const Read& read) const;
 
 public:
 	Filter(int low_level, int low_interval, int top_level, double ratio);
 	Filter(const Filter& filter);
 	Filter();
-	bool insertMer(const Read read, int score);
+	bool insertMer(const Read& read, int score);
+	bool insertMers(Fasta& fasta);
 	bool insertMers(const Filter& filter);
-	bool check(const Read read) const;
+	bool check(const Read& read) const;
+	int average(const Read& read) const;
 	void setDebug(bool);
 	int size() {
 		return this->_mer_map.size();

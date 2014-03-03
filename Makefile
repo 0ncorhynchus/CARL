@@ -10,7 +10,7 @@ clean:
 	rm -f *.o filter read_test fasta_test
 
 filter: read.o fasta.o filter.o filter_main.o
-	g++ read.o fasta.o filter.o filter_main.o -lboost_thread-mt -o filter
+	g++ read.o fasta.o filter.o filter_main.o -lboost_system -lboost_thread -lboost_program_options -o filter
 
 read_test: read.o
 fasta_test: read.o fasta.o

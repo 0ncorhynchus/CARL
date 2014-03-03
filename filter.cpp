@@ -32,7 +32,7 @@ Filter::Filter() {
 	this->_ratio = 0.;
 }
 
-bool Filter::insertMer(const Read read, int score) {
+bool Filter::insertMer(const Read& read, int score) {
 	if (this->_mer_length == 0) {
 		this->_mer_length = read.size();
 	} else if (read.size() != this->_mer_length) {
@@ -51,6 +51,32 @@ bool Filter::insertMer(const Read read, int score) {
 
 	this->_mer_map.insert(mer_map::value_type(read, score));
 	return true;
+}
+
+bool Filter::insertMers(Fasta& fasta) {
+	bool retval(false);
+	while (!fasta.eof()) {
+		const FastaItem item(fasta.getItem());
+		int score(0);
+		std::string str;
+		try {
+			str = item.getInfo();
+			score = boost::lexical_cast<int>(str);
+		} catch(boost::bad_lexical_cast) {
+			if (_debug) {
+				std::cerr << "boost::bad_lexical_cast" << str << std::endl;
+			}
+			continue;
+		}
+		const Read read(item.getRead());
+		const bool flg(insertMer(read, score));
+		if (!flg && _debug) {
+			std::cerr << "Not import mer : " << read.tostring()
+				<< " @" << score << std::endl;
+		}
+		retval = retval || flg;
+	}
+	return retval;
 }
 
 bool Filter::insertMers(const Filter& filter) {
@@ -75,7 +101,7 @@ bool Filter::insertMers(const Filter& filter) {
 	return true;
 }
 
-bool Filter::check(const Read read) const {
+bool Filter::check(const Read& read) const {
 	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
 		return false;
 	}
@@ -131,7 +157,33 @@ bool Filter::check(const Read read) const {
 		high_average < low_average * _ratio;
 }
 
-int Filter::_getScore(Read read) const {
+int Filter::average(const Read& read) const {
+	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
+		return false;
+	}
+	if (_debug) {
+		std::cerr << std::endl;
+		std::cerr << read.size() - this->_mer_length << std::endl;
+	}
+
+	int total(0);
+	for (int i(0); i < read.size() - this->_mer_length; i++) {
+		Read sub(read.sub(i, this->_mer_length));
+		if (!sub.isDefinite()) {
+			if (_debug) {
+				std::cerr << "Including other character, It will be passed" << std::endl;
+				std::cerr << sub.tostring() << std::endl;
+			}
+			continue;
+		}
+		const int score(this->_getScore(sub));
+		total += score;
+	}
+
+	return total/(read.size() - _mer_length);
+}
+
+int Filter::_getScore(const Read& read) const {
 	int score(0);
 	mer_map::const_iterator itr(_mer_map.find(read));
 	if (itr != _mer_map.end()) {

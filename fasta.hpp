@@ -22,7 +22,7 @@ public:
 
 class Fasta {
 private:
-	std::string filename;
+	const std::string filename;
 	std::ifstream ifs;
 public:
 	Fasta(const std::string& filename);
@@ -30,7 +30,7 @@ public:
 	~Fasta();
 	FastaItem getItem();
 	std::pair<std::string, std::string> getItemStrings();
-	bool eof();
+	bool eof() const;
 };
 
 #endif

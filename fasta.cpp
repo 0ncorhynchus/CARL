@@ -30,13 +30,11 @@ const Read& FastaItem::getRead() const {
 /*
  * Fasta
  */
-Fasta::Fasta(const std::string& filename) {
-	this->filename = filename;
+Fasta::Fasta(const std::string& filename) : filename(filename){
 	this->ifs.open(this->filename);
 }
 
-Fasta::Fasta(const Fasta& fasta) {
-	this->filename = fasta.filename;
+Fasta::Fasta(const Fasta& fasta) : filename(fasta.filename){
 	ifs.open(this->filename);
 }
 
@@ -84,6 +82,6 @@ std::pair<std::string, std::string> Fasta::getItemStrings() {
 	return retval;
 }
 
-bool Fasta::eof() {
+bool Fasta::eof() const {
 	return ifs.eof();
 }

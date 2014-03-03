@@ -27,7 +27,7 @@ public:
 	bool isDefinite() const;
 	Read sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range);
 	Read complement() const;
-	std::string tostring();
+	std::string tostring() const;
 
 	bool operator==(const Read& read) const {
 		if (this->size() != read.size())

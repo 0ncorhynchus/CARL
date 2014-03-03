@@ -187,7 +187,7 @@ Read Read::complement() const {
 	return retval;
 }
 
-std::string Read::tostring() {
+std::string Read::tostring() const {
 	int size(this->size());
 	std::string str("");
 
