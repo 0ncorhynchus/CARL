@@ -7,7 +7,7 @@ std::size_t hash_value(const Read& read) {
 	for (int i(0); i < read.size(); i++) {
 		h = h << 2;
 		int base = read.getBaseAt(i);
-		if (base & 4 == 1) {
+		if ((base & 4) == 1) {
 			return 0;
 		}
 		h += (std::size_t)(base & 3);
@@ -160,7 +160,7 @@ bool Read::isDefinite() const {
 }
 
 Read Read::sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range){
-	if (start < 0 || length <= 0 || start + length > this->size())
+	if (length <= 0 || start + length > this->size())
 		throw std::out_of_range("out of range in sub()");
 
 	Read retval(length);
