@@ -87,14 +87,6 @@ void filter(const std::string& filename, const std::string& mers_file,
 		for (int i(0); i < cpua; i++)
 		{
 			std::ostringstream oss;
-			int sindex(mers_file.find_last_of("/") + 1);
-			int eindex(mers_file.find_last_of("."));
-			int sublen(0);
-			if (eindex == std::string::npos || eindex < sindex) {
-				sublen = mers_file.length() - sindex;
-			} else {
-				sublen = eindex - sindex;
-			}
 			oss << "/tmp/filter_read_splita_" << identifier << "_" << i;
 			filenames[i] = oss.str();
 
@@ -229,14 +221,6 @@ void calculate_average(const std::string& filename, const std::string& mers_file
 		for (int i(0); i < cpua; i++)
 		{
 			std::ostringstream oss;
-			int sindex(mers_file.find_last_of("/") + 1);
-			int eindex(mers_file.find_last_of("."));
-			int sublen(0);
-			if (eindex == std::string::npos || eindex < sindex) {
-				sublen = mers_file.length() - sindex;
-			} else {
-				sublen = eindex - sindex;
-			}
 			oss << "/tmp/filter_read_splita_" << identifier << "_" << i;
 			filenames[i] = oss.str();
 
