@@ -112,7 +112,7 @@ bool Filter::check(const Read& read) const {
 
 	int low_total(0), low_count(0), high_total(0), high_count(0);
 
-	for (int i(0); i < read.size() - this->_mer_length; i++) {
+	for (int i(0); i <= read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
 		if (!sub.isDefinite()) {
 			if (_debug) {
@@ -167,7 +167,7 @@ int Filter::average(const Read& read) const {
 	}
 
 	int total(0);
-	for (int i(0); i < read.size() - this->_mer_length; i++) {
+	for (int i(0); i <= read.size() - this->_mer_length; i++) {
 		Read sub(read.sub(i, this->_mer_length));
 		if (!sub.isDefinite()) {
 			if (_debug) {
@@ -180,7 +180,7 @@ int Filter::average(const Read& read) const {
 		total += score;
 	}
 
-	return total/(read.size() - _mer_length);
+	return total/(read.size() - _mer_length + 1);
 }
 
 int Filter::_getScore(const Read& read) const {
