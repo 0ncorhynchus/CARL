@@ -19,7 +19,7 @@ private:
 	int _low_interval;
 	double _ratio;
 	bool _debug;
-	int _getScore(const Read& read) const;
+	int _getScore(const Read& read, const int default_value) const;
 
 public:
 	Filter(int low_level, int low_interval, int top_level, double ratio);

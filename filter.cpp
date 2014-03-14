@@ -121,7 +121,7 @@ bool Filter::check(const Read& read) const {
 			}
 			continue;
 		}
-		int score(this->_getScore(sub));
+		int score(this->_getScore(sub,0));
 		if (_debug) {
 			std::cerr << " " << score;
 		}
@@ -176,14 +176,14 @@ int Filter::average(const Read& read) const {
 			}
 			continue;
 		}
-		const int score(this->_getScore(sub));
+		const int score(this->_getScore(sub,1));
 		total += score;
 	}
 
 	return total/(read.size() - _mer_length + 1);
 }
 
-int Filter::_getScore(const Read& read) const {
+int Filter::_getScore(const Read& read, const int default_value) const {
 	int score(0);
 	mer_map::const_iterator itr(_mer_map.find(read));
 	if (itr != _mer_map.end()) {
@@ -193,7 +193,7 @@ int Filter::_getScore(const Read& read) const {
 		if (comp != _mer_map.end()) {
 			score = (*comp).second;
 		} else {
-			return -1;
+			return default_value;
 		}
 	}
 	return score;
