@@ -6,10 +6,12 @@
 
 #include <string>
 #include <boost/lexical_cast.hpp>
-#include <boost/unordered_map.hpp>
+//#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include "fasta.hpp"
 
-typedef boost::unordered_map<Read, int> mer_map;
+//typedef boost::unordered_map<Read, int> mer_map;
+typedef std::unordered_map<Read, int> mer_map;
 
 class Filter {
 private:

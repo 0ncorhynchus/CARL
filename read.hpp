@@ -49,4 +49,13 @@ private:
 
 std::size_t hash_value(const Read& read);
 
+namespace std {
+	template <>
+	struct hash<Read> {
+		std::size_t operator()(const Read& read) const {
+			return hash_value(read);
+		}
+	};
+}
+
 #endif
