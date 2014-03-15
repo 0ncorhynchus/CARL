@@ -56,7 +56,7 @@ bool Filter::insertMer(const Read& read, int score) {
 bool Filter::insertMers(Fasta& fasta) {
 	bool retval(false);
 	while (!fasta.eof()) {
-		const FastaItem item(fasta.getItem());
+		const Fasta::Item item(fasta.getItem());
 		int score(0);
 		std::string str;
 		try {

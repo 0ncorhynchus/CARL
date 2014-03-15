@@ -6,24 +6,24 @@
 #include <iostream>
 
 /*
- * FastaItem
+ * Fasta::Item
  */
-FastaItem::FastaItem(std::string info, std::string sequence) : read(sequence) {
+Fasta::Item::Item(std::string info, std::string sequence) : read(sequence) {
 	this->info = info;
 }
 
-FastaItem::FastaItem(const FastaItem& item) : read(item.read) {
+Fasta::Item::Item(const Fasta::Item& item) : read(item.read) {
 	this->info = item.info;
 }
 
-FastaItem::~FastaItem() {
+Fasta::Item::~Item() {
 }
 
-std::string FastaItem::getInfo() const {
+std::string Fasta::Item::getInfo() const {
 	return info;
 }
 
-const Read& FastaItem::getRead() const {
+const Read& Fasta::Item::getRead() const {
 	return read;
 }
 
@@ -43,9 +43,9 @@ Fasta::~Fasta() {
 }
 
 
-FastaItem Fasta::getItem() {
+Fasta::Item Fasta::getItem() {
 	std::pair<std::string, std::string> strings(this->getItemStrings());
-	FastaItem item(strings.first, strings.second);
+	Fasta::Item item(strings.first, strings.second);
 	return item;
 }
 
