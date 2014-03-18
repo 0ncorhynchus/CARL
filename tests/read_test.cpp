@@ -8,11 +8,13 @@
 struct Fixture {
 	const std::string sequence_string;
 	const std::string complement_string;
+	const std::string complement_reverse_string;
 	Read read;
 
 	Fixture() :
 		sequence_string("tcaggggggttttaatttactttcgtacacagcgtaa"),
-		complement_string("ttacgctgtgtacgaaagtaaattaaaacccccctga"),
+		complement_string("agtccccccaaaattaaatgaaagcatgtgtcgcatt"),
+		complement_reverse_string("ttacgctgtgtacgaaagtaaattaaaacccccctga"),
 		read(sequence_string) {
 	}
 };
@@ -23,6 +25,13 @@ BOOST_AUTO_TEST_CASE(constructor) {}
 
 BOOST_AUTO_TEST_CASE(copy_constructor) {
 	const Read copy(read);
+	BOOST_ASSERT(read == copy);
+	BOOST_ASSERT(&read != &copy);
+}
+
+BOOST_AUTO_TEST_CASE(copy_assignment) {
+	Read copy;
+	copy = read;
 	BOOST_ASSERT(read == copy);
 	BOOST_ASSERT(&read != &copy);
 }
@@ -39,6 +48,16 @@ BOOST_AUTO_TEST_CASE(complement) {
 	const Read complement(read.complement());
 	BOOST_CHECK_EQUAL(complement.size(), read.size());
 	BOOST_CHECK_EQUAL(complement.tostring(), complement_string);
+}
+
+BOOST_AUTO_TEST_CASE(reverse) {
+	const Read complement(read.complement());
+	BOOST_CHECK_EQUAL(complement.size(), read.size());
+	BOOST_CHECK_EQUAL(complement.tostring(), complement_string);
+	const Read complement_reverse(complement.reverse());
+	BOOST_CHECK_EQUAL(complement_reverse.size(), complement.size());
+	BOOST_CHECK_EQUAL(complement_reverse.tostring(),
+			complement_reverse_string);
 }
 
 BOOST_AUTO_TEST_CASE(getBaseAt) {

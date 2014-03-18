@@ -17,6 +17,7 @@ public:
 		public:
 			Item(std::string info, std::string sequence);
 			Item(const Item& item);
+			Item();
 			~Item();
 			std::string getInfo() const;
 			const Read& getRead() const;

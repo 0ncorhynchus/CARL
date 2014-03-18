@@ -16,6 +16,10 @@ Fasta::Item::Item(const Fasta::Item& item) : read(item.read) {
 	this->info = item.info;
 }
 
+Fasta::Item::Item() : read() {
+	info = "";
+}
+
 Fasta::Item::~Item() {
 }
 
@@ -41,7 +45,6 @@ Fasta::Fasta(const Fasta& fasta) : filename(fasta.filename){
 Fasta::~Fasta() {
 	ifs.close();
 }
-
 
 Fasta::Item Fasta::getItem() {
 	std::pair<std::string, std::string> strings(this->getItemStrings());
