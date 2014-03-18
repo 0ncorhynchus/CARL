@@ -108,7 +108,7 @@ void filter(const std::string& filename, const std::string& mers_file,
 
 		bool isJoined(true);
 		for (int i(0); i < cpua; i++) {
-			isJoined = isJoined && filter->insertMers(filter_set[i]);
+			isJoined = isJoined && filter->join(filter_set[i]);
 			remove(filenames[i].c_str());
 		}
 		if (!isJoined && debug) {
@@ -192,7 +192,7 @@ void filter(const std::string& filename, const std::string& mers_file,
 void calculate_average(const std::string& filename, const std::string& mers_file,
 		const unsigned int& cpua, const unsigned int& cpub, const bool debug) {
 
-	Filter *filter = new Filter(0,0,0,0);
+	Filter *filter = new Filter(1,0,0,0);
 	filter->setDebug(debug);
 
 	/*
@@ -242,7 +242,7 @@ void calculate_average(const std::string& filename, const std::string& mers_file
 
 		bool isJoined(true);
 		for (int i(0); i < cpua; i++) {
-			isJoined = isJoined && filter->insertMers(filter_set[i]);
+			isJoined = isJoined && filter->join(filter_set[i]);
 			remove(filenames[i].c_str());
 		}
 		if (!isJoined && debug) {

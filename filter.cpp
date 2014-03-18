@@ -5,19 +5,20 @@
 #include <string>
 #include "filter.hpp"
 
-Filter::Filter(int low_level, int low_interval, int top_level, double ratio) {
+Filter::Filter(int lower_level, int lower_interval, int upper_level, double ratio) {
 	this->_mer_length = 0;
-	this->_low_level = low_level;
-	this->_low_interval = low_interval;
-	this->_top_level = top_level;
+	this->_lower_level = lower_level;
+	this->_lower_interval = lower_interval;
+	this->_upper_level = upper_level;
 	this->_ratio = ratio;
+	this->_debug = false;
 }
 
 Filter::Filter(const Filter& filter) {
 	this->_mer_length = filter._mer_length;
-	this->_low_level = filter._low_level;
-	this->_low_interval = filter._low_interval;
-	this->_top_level = filter._top_level;
+	this->_lower_level = filter._lower_level;
+	this->_lower_interval = filter._lower_interval;
+	this->_upper_level = filter._upper_level;
 	this->_ratio = filter._ratio;
 
 	this->_mer_map = filter._mer_map;
@@ -26,26 +27,20 @@ Filter::Filter(const Filter& filter) {
 
 Filter::Filter() {
 	this->_mer_length = 0;
-	this->_low_level = 0;
-	this->_low_interval = 0;
-	this->_top_level = 0;
+	this->_lower_level = 0;
+	this->_lower_interval = 0;
+	this->_upper_level = 0;
 	this->_ratio = 0.;
+	this->_debug = false;
 }
 
-bool Filter::insertMer(const Read& read, int score) {
+bool Filter::insertMer(const Read& read, int score) throw(MerLengthError) {
 	if (this->_mer_length == 0) {
 		this->_mer_length = read.size();
 	} else if (read.size() != this->_mer_length) {
-		if (_debug) {
-			std::cerr << "Mer Length Error: " << this->_mer_length;
-			std::cerr << ", " << read.size() << std::endl;
-		}
-		return false;
-	} else if (score <= this->_low_level) {
-		if (_debug) {
-			std::cerr << "Low Level Error: " << this->_low_level;
-			std::cerr << ", " << score << std::endl;
-		}
+		throw MerLengthError();
+	} else if (score <= this->_lower_level) {
+		// score <= low level
 		return false;
 	}
 
@@ -56,134 +51,115 @@ bool Filter::insertMer(const Read& read, int score) {
 bool Filter::insertMers(Fasta& fasta) {
 	bool retval(false);
 	while (!fasta.eof()) {
-		const FastaItem item(fasta.getItem());
+		const Fasta::Item item(fasta.getItem());
 		int score(0);
 		std::string str;
 		try {
 			str = item.getInfo();
 			score = boost::lexical_cast<int>(str);
-		} catch(boost::bad_lexical_cast) {
+			const Read read(item.getRead());
+			const bool flg(insertMer(read, score));
+			retval = retval || flg;
+		} catch(const boost::bad_lexical_cast& e) {
 			if (_debug) {
-				std::cerr << "boost::bad_lexical_cast" << str << std::endl;
+				std::cerr << e.what() << std::endl;
 			}
 			continue;
+		} catch(const MerLengthError& e) {
+			continue;
 		}
-		const Read read(item.getRead());
-		const bool flg(insertMer(read, score));
-		if (!flg && _debug) {
-			std::cerr << "Not import mer : " << read.tostring()
-				<< " @" << score << std::endl;
-		}
-		retval = retval || flg;
 	}
 	return retval;
 }
 
-bool Filter::insertMers(const Filter& filter) {
-	if (filter._low_level != this->_low_level) {
-		if (_debug) {
-			std::cerr << "Low Level Error: " << this->_low_level;
-			std::cerr << ", " << filter._low_level << std::endl;
-		}
-		return false;
+bool Filter::join(const Filter& filter) throw(MerLengthError, LowLevelError) {
+	if (filter._lower_level != this->_lower_level) {
+		throw LowLevelError();
 	}
 	if (this->_mer_length == 0) {
 		this->_mer_length = filter._mer_length;
 	} else if (filter._mer_length != this->_mer_length) {
-		if (_debug) {
-			std::cerr << "Mer Length Error: " << this->_mer_length;
-			std::cerr << ", " << filter._mer_length << std::endl;
-		}
-		return false;
+		throw MerLengthError();
 	}
 
 	this->_mer_map.insert(filter._mer_map.begin(), filter._mer_map.end());
 	return true;
 }
 
-bool Filter::check(const Read& read) const {
-	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
-		return false;
+std::vector<unsigned int> Filter::scores(const Read& read) const {
+	std::vector<unsigned int> retval;
+	const int length(read.size() - _mer_length + 1);
+	if (_mer_length == 0 || length <= 0) {
+		return retval;
 	}
-	if (_debug) {
-		std::cerr << std::endl;
-		std::cerr << read.size() - this->_mer_length << std::endl;
-	}
-
-	int low_total(0), low_count(0), high_total(0), high_count(0);
-
-	for (int i(0); i < read.size() - this->_mer_length; i++) {
-		Read sub(read.sub(i, this->_mer_length));
+	for (int i(0); i < length; i++) {
+		const Read sub(read.sub(i, _mer_length));
 		if (!sub.isDefinite()) {
-			if (_debug) {
-				std::cerr << "Including other character, It will be passed" << std::endl;
-				std::cerr << sub.tostring() << std::endl;
-			}
 			continue;
 		}
-		int score(this->_getScore(sub));
-		if (_debug) {
-			std::cerr << " " << score;
-		}
-		if (score <= this->_low_level) {
-			low_count++;
-			low_total += score;
+		retval.push_back(_getScore(sub,0));
+	}
+	return retval;
+}
+
+bool Filter::check(std::vector<unsigned int> scores) const {
+	if (scores.size() == 0) {
+		return false;
+	}
+
+	int lower_total(0), lower_count(0);
+	int upper_total(0), upper_count(0);
+
+	for (std::vector<unsigned int>::const_iterator itr(scores.begin());
+			itr != scores.end(); itr++) {
+		if (*itr <= _lower_level) {
+			lower_count++;
+			lower_total += *itr;
 		} else {
-			high_count++;
-			high_total += score;
-			if (low_count < this->_low_interval) {
-				low_count = 0;
+			upper_count++;
+			upper_total += *itr;
+			if (lower_count < _lower_interval) {
+				lower_count = 0;
 			}
 		}
 	}
-	if (_debug) {
-		std::cerr << std::endl;
-	}
 
-	if (high_count == 0) {
-		if (_debug) {
-			std::cerr << "# low_count = " << low_count << ", high_count = 0" << std::endl;
-			std::cerr << "# read size = " << read.size() << std::endl;
-		}
+	if (upper_count == 0) {
+		return true;
+	}
+	if (lower_count < _lower_interval) {
 		return true;
 	}
 
-	if (_debug) {
-		std::cerr << "# low_count = " << low_count << ", high_total = " << high_total << std::endl;
-	}
-	double high_average(double(high_total)/high_count),
-		   low_average(double(low_total)/low_count);
-	return low_count < this->_low_interval || high_average < _top_level ||
-		high_average < low_average * _ratio;
+	double upper_average(double(upper_total)/upper_count),
+		   lower_average(double(lower_total)/lower_count);
+	return upper_average < _upper_level || upper_average < lower_average * _ratio;
+}
+
+bool Filter::check(const Read& read) const {
+	return check(scores(read));
 }
 
 int Filter::average(const Read& read) const {
-	if (this->_mer_length == 0 || read.size() < this->_mer_length) {
-		return false;
-	}
-	if (_debug) {
-		std::cerr << std::endl;
-		std::cerr << read.size() - this->_mer_length << std::endl;
+	std::vector<unsigned int> scores(this->scores(read));
+	if (scores.size() == 0) {
+		return 0;
 	}
 
-	int total(0);
-	for (int i(0); i < read.size() - this->_mer_length; i++) {
-		Read sub(read.sub(i, this->_mer_length));
-		if (!sub.isDefinite()) {
-			if (_debug) {
-				std::cerr << "Including other character, It will be passed" << std::endl;
-				std::cerr << sub.tostring() << std::endl;
-			}
-			continue;
-		}
-		const int score(this->_getScore(sub));
-		total += score;
+	unsigned int total(0);
+	for (std::vector<unsigned int>::const_iterator itr(scores.begin());
+			itr != scores.end(); itr++) {
+		total += *itr;
 	}
 
-	return total/(read.size() - _mer_length);
+	return total/scores.size();
 }
 
-int Filter::_getScore(const Read& read) const {
+int Filter::_getScore(const Read& read, const int default_value) const
+		throw(MerLengthError){
+	if (read.size() != _mer_length) {
+		throw MerLengthError();
+	}
 	int score(0);
 	mer_map::const_iterator itr(_mer_map.find(read));
 	if (itr != _mer_map.end()) {
@@ -193,7 +169,7 @@ int Filter::_getScore(const Read& read) const {
 		if (comp != _mer_map.end()) {
 			score = (*comp).second;
 		} else {
-			return -1;
+			return default_value;
 		}
 	}
 	return score;

@@ -6,27 +6,30 @@
 
 #include <string>
 #include <stdexcept>
+#include <vector>
+#include <algorithm>
 
 class Read {
 private:
 	static const char bases[4];
 
-	unsigned char *_read;
-	unsigned char *_flgs;
-	const unsigned int _size;
+	std::vector<unsigned char> _read;
+	std::vector<unsigned char> _flgs;
 
-	unsigned int r_size() const;
-	unsigned int f_size() const;
+	unsigned int _size;
 
 public:
 	Read(const std::string sequence);
 	Read(const Read& read);
-	~Read();
+	Read(const unsigned int size);
+	Read();
 	unsigned int size() const;
-	unsigned int getBaseAt(const unsigned int index) const throw(std::out_of_range);
+	unsigned char getBaseAt(const unsigned int index) const throw(std::out_of_range);
 	bool isDefinite() const;
-	Read sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range);
+	Read sub(const unsigned int start, const unsigned int length) const
+		throw(std::out_of_range);
 	Read complement() const;
+	Read reverse() const;
 	std::string tostring() const;
 
 	bool operator==(const Read& read) const {
@@ -43,8 +46,9 @@ public:
 	}
 
 private:
-	Read(const unsigned int size);
-	void setBaseAt(const unsigned int index, const unsigned int value) throw(std::out_of_range);
+	std::pair<unsigned int, unsigned int> _indexes(unsigned int index) const;
+	void setBaseAt(const unsigned int index, const unsigned char value)
+		throw(std::out_of_range);
 };
 
 std::size_t hash_value(const Read& read);

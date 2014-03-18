@@ -8,19 +8,21 @@
 #include <string>
 #include "read.hpp"
 
-class FastaItem {
-private:
-	std::string info;
-	Read read;
-public:
-	FastaItem(std::string info, std::string sequence);
-	FastaItem(const FastaItem& item);
-	~FastaItem();
-	std::string getInfo() const;
-	const Read& getRead() const;
-};
-
 class Fasta {
+public:
+	class Item {
+		private:
+			std::string info;
+			Read read;
+		public:
+			Item(std::string info, std::string sequence);
+			Item(const Item& item);
+			Item();
+			~Item();
+			std::string getInfo() const;
+			const Read& getRead() const;
+	};
+
 private:
 	const std::string filename;
 	std::ifstream ifs;
@@ -28,7 +30,7 @@ public:
 	Fasta(const std::string& filename);
 	Fasta(const Fasta& fasta);
 	~Fasta();
-	FastaItem getItem();
+	Item getItem();
 	std::pair<std::string, std::string> getItemStrings();
 	bool eof() const;
 };

@@ -1,7 +1,2 @@
-*.o
+build/
 filter
-read_test
-read
-db
-data
-fasta_test
