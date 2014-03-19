@@ -2,10 +2,13 @@
 
 output="Makefile"
 
-thread_libraries="boost_thread boost_thread-mt"
+thread_libraries="boost_thread-mt boost_thread"
 for lib in ${thread_libraries}; do
-	echo "checking for lib$lib.a"
+	echo "checking for lib$lib"
 	if [ -e $(g++ --print-file-name=lib$lib.a) ]; then
+		thread_library=$lib
+	fi
+	if [ -e $(g++ --print-file-name=lib$lib.so) ]; then
 		thread_library=$lib
 	fi
 done
