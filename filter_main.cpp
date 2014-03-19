@@ -12,12 +12,12 @@
 
 #include "filter.hpp"
 
-void insertMer(const std::string filename, Filter& filter) {
-    Fasta mers(filename);
+void insertMer(const std::string mer_file, Filter& filter) {
+    Fasta mers(mer_file);
     filter.insertMers(mers);
 }
 
-int average(const std::string infile, std::ostream& str, const Filter& filter, bool debug) {
+int average(const std::string infile, std::ostream& str, const Filter& filter) {
     Fasta fasta(infile);
     while (!fasta.eof()) {
         const std::pair<std::string, std::string> item(fasta.getItemStrings());
@@ -35,7 +35,7 @@ int average(const std::string infile, std::ostream& str, const Filter& filter, b
     return score;
 }
 
-void check(const std::string infile, std::ostream& str, const Filter& filter, bool debug) {
+void check(const std::string infile, std::ostream& str, const Filter& filter) {
     Fasta fasta(infile);
     while (!fasta.eof()) {
         std::pair<std::string, std::string> item(fasta.getItemStrings());
@@ -51,15 +51,13 @@ void check(const std::string infile, std::ostream& str, const Filter& filter, bo
             str << seq << std::endl;
         }
     }
-} 
+}
 
-void filter(const std::string& filename, const std::string& mers_file,
-        const unsigned int& low_level, const unsigned int& low_interval,
-        const unsigned int& top_level, const double& ratio,
-        const unsigned int& cpua, const unsigned int& cpub, const bool debug) {
+void filter(const std::string& read_file, const std::string& mers_file,
+        const unsigned int& lower_level, const unsigned int& low_interval,
+        const double& ratio, const unsigned int& cpua, const unsigned int& cpub) {
 
-    Filter *filter = new Filter(low_level, low_interval, top_level, ratio);
-    filter->setDebug(debug);
+    Filter *filter = new Filter(lower_level, low_interval, ratio);
 
     /*
      * Importing mer from a file
@@ -99,32 +97,28 @@ void filter(const std::string& filename, const std::string& mers_file,
             }
             ofs.close();
 
-            filter_set[i] = Filter(low_level, low_interval, top_level, ratio);
-            filter_set[i].setDebug(debug);
+            filter_set[i] = Filter(lower_level, low_interval, ratio);
             threads.create_thread(boost::bind(&insertMer, filenames[i] , std::ref(filter_set[i])));
         }
         ifs.close();
         threads.join_all();
 
-        bool isJoined(true);
         for (int i(0); i < cpua; i++) {
-            isJoined = isJoined && filter->join(filter_set[i]);
+            try {
+                filter->join(filter_set[i]);
+            } catch(const Filter::LowerLevelError& e) {
+                std::cerr << e.what() << std::endl;
+            } catch(const Filter::MerLengthError& e) {
+                std::cerr << e.what() << std::endl;
+            }
             remove(filenames[i].c_str());
-        }
-        if (!isJoined && debug) {
-            std::cerr << "Failed join maps" << std::endl;
         }
         delete[] filenames;
         delete[] filter_set;
     }
 
-    if (debug) {
-        std::cerr << "finish map" << std::endl;
-        std::cerr << "map size: " <<  filter->size() << std::endl;
-    }
-
     if (cpub == 1) {
-        check(filename, std::cout, *filter, debug);
+        check(read_file, std::cout, *filter);
     } else {
         std::string *infiles = new std::string[cpub];
         std::string *outfiles = new std::string[cpub];
@@ -132,7 +126,7 @@ void filter(const std::string& filename, const std::string& mers_file,
         Filter *filter_set = new Filter[cpub];
 
         boost::thread_group threads;
-        std::ifstream ifs(filename);
+        std::ifstream ifs(read_file);
         std::string buf;
         int lines(0);
         while (ifs && getline(ifs, buf)) {
@@ -141,7 +135,7 @@ void filter(const std::string& filename, const std::string& mers_file,
         lines /= 2;
         ifs.close();
 
-        ifs.open(filename);
+        ifs.open(read_file);
         for (int i(0); i < cpub; i++)
         {
             std::ostringstream ioss, ooss;
@@ -162,7 +156,7 @@ void filter(const std::string& filename, const std::string& mers_file,
             outstreams[i].open(outfiles[i].c_str());
             filter_set[i] = Filter(*filter);
             threads.create_thread(boost::bind(&check, infiles[i],
-                        std::ref(outstreams[i]), std::ref(filter_set[i]), debug));
+                        std::ref(outstreams[i]), std::ref(filter_set[i])));
         }
         ifs.close();
         threads.join_all();
@@ -189,11 +183,10 @@ void filter(const std::string& filename, const std::string& mers_file,
     delete filter;
 }
 
-void calculate_average(const std::string& filename, const std::string& mers_file,
-        const unsigned int& cpua, const unsigned int& cpub, const bool debug) {
+void calculate_average(const std::string& read_file, const std::string& mers_file,
+        const unsigned int& cpua, const unsigned int& cpub) {
 
-    Filter *filter = new Filter(1,0,0,0);
-    filter->setDebug(debug);
+    Filter *filter = new Filter(1,0,0);
 
     /*
      * Importing mer from a file
@@ -233,32 +226,28 @@ void calculate_average(const std::string& filename, const std::string& mers_file
             }
             ofs.close();
 
-            filter_set[i] = Filter(1,0,0,0);
-            filter_set[i].setDebug(debug);
+            filter_set[i] = Filter(1,0,0);
             threads.create_thread(boost::bind(&insertMer, filenames[i] , std::ref(filter_set[i])));
         }
         ifs.close();
         threads.join_all();
 
-        bool isJoined(true);
         for (int i(0); i < cpua; i++) {
-            isJoined = isJoined && filter->join(filter_set[i]);
+            try {
+                filter->join(filter_set[i]);
+            } catch(const Filter::LowerLevelError& e) {
+                std::cerr << e.what() << std::endl;
+            } catch(const Filter::MerLengthError& e) {
+                std::cerr << e.what() << std::endl;
+            }
             remove(filenames[i].c_str());
-        }
-        if (!isJoined && debug) {
-            std::cerr << "Failed join maps" << std::endl;
         }
         delete[] filenames;
         delete[] filter_set;
     }
 
-    if (debug) {
-        std::cerr << "finish map" << std::endl;
-        std::cerr << "map size: " <<  filter->size() << std::endl;
-    }
-
     if (cpub == 1) {
-        average(filename, std::cout, *filter, debug);
+        average(read_file, std::cout, *filter);
     } else {
         std::string *infiles = new std::string[cpub];
         std::string *outfiles = new std::string[cpub];
@@ -266,7 +255,7 @@ void calculate_average(const std::string& filename, const std::string& mers_file
         Filter *filter_set = new Filter[cpub];
 
         boost::thread_group threads;
-        std::ifstream ifs(filename);
+        std::ifstream ifs(read_file);
         std::string buf;
         int lines(0);
         while (ifs && getline(ifs, buf)) {
@@ -275,7 +264,7 @@ void calculate_average(const std::string& filename, const std::string& mers_file
         lines /= 2;
         ifs.close();
 
-        ifs.open(filename);
+        ifs.open(read_file);
         for (int i(0); i < cpub; i++)
         {
             std::ostringstream ioss, ooss;
@@ -296,7 +285,7 @@ void calculate_average(const std::string& filename, const std::string& mers_file
             outstreams[i].open(outfiles[i].c_str());
             filter_set[i] = Filter(*filter);
             threads.create_thread(boost::bind(&average, infiles[i],
-                        std::ref(outstreams[i]), std::ref(filter_set[i]), debug));
+                        std::ref(outstreams[i]), std::ref(filter_set[i])));
         }
         ifs.close();
         threads.join_all();
@@ -326,20 +315,17 @@ void calculate_average(const std::string& filename, const std::string& mers_file
 
 int main(int argc, char** argv) {
     std::string command(argv[0]);
-    std::string usage("usage: " + command + " filename mer_file [options]");
+    std::string usage("usage: " + command + " read_file mer_file [options]");
 
-    unsigned int top_level(0), low_level(0), low_interval(0);
+    unsigned int lower_level(0), low_interval(0);
     double ratio;
     int result;
     unsigned int cpua(1), cpub(1);
-    bool debug(false);
     using namespace boost::program_options;
     options_description options0(""), options1("");
     options0.add_options()
-        ("debug,d","debug")
-        (",f", value<unsigned int>(&low_level), "low_level")
+        (",f", value<unsigned int>(&lower_level), "lower_level")
         (",m", value<unsigned int>(&low_interval), "low_frequence")
-        (",t", value<unsigned int>(&top_level), "top_level")
         (",r", value<double>(&ratio), "ratio")
         (",a", value<unsigned int>(&cpua)->default_value(1), "threads for creating maps")
         (",b", value<unsigned int>(&cpub)->default_value(1), "threads for calculating");
@@ -353,19 +339,17 @@ int main(int argc, char** argv) {
         std::cerr << options0 << std::endl;
         return 1;
     }
-    std::string filename(argv[1]);
+    std::string read_file(argv[1]);
     std::string mers_file(argv[2]);
 
     variables_map values;
     try {
         store(parse_command_line(argc, argv, options0), values);
         notify(values);
-        debug = values.count("debug");
         if (values.count("average")) {
-            calculate_average(filename, mers_file, cpua, cpub, debug);
+            calculate_average(read_file, mers_file, cpua, cpub);
         } else {
-            filter(filename, mers_file, low_level, low_interval,
-                    top_level, ratio, cpua, cpub, debug);
+            filter(read_file, mers_file, lower_level, low_interval, ratio, cpua, cpub);
         }
     } catch (std::exception &e) {
         std::cerr << e.what() << std::endl;

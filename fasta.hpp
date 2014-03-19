@@ -10,29 +10,30 @@
 
 class Fasta {
 public:
-	class Item {
-		private:
-			std::string info;
-			Read read;
-		public:
-			Item(std::string info, std::string sequence);
-			Item(const Item& item);
-			Item();
-			~Item();
-			std::string getInfo() const;
-			const Read& getRead() const;
-	};
+    class Item {
+        private:
+            std::string info;
+            Read read;
+        public:
+            Item(std::string info, std::string sequence);
+            Item(const Item& item);
+            Item();
+            ~Item();
+            std::string getInfo() const;
+            const Read& getRead() const;
+    };
 
 private:
-	const std::string filename;
-	std::ifstream ifs;
+    const std::string _filename;
+    std::ifstream _ifs;
+    std::pair<std::string, std::string> _tmp;
 public:
-	Fasta(const std::string& filename);
-	Fasta(const Fasta& fasta);
-	~Fasta();
-	Item getItem();
-	std::pair<std::string, std::string> getItemStrings();
-	bool eof() const;
+    Fasta(const std::string& filename);
+    Fasta(const Fasta& fasta);
+    ~Fasta();
+    Item getItem();
+    std::pair<std::string, std::string> getItemStrings();
+    bool eof() const;
 };
 
 #endif

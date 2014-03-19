@@ -2,18 +2,23 @@
 
 output="Makefile"
 
+if [ -e $output ]; then
+    echo "make clean"
+    make clean > /dev/null
+fi
+
 thread_libraries="boost_thread-mt boost_thread"
 for lib in ${thread_libraries}; do
-	echo "checking for lib$lib"
-	if [ -e $(g++ --print-file-name=lib$lib.a) ]; then
-		thread_library=$lib
-	fi
-	if [ -e $(g++ --print-file-name=lib$lib.so) ]; then
-		thread_library=$lib
-	fi
+    echo "checking for lib$lib"
+    if [ -e $(g++ --print-file-name=lib$lib.a) ]; then
+        thread_library=$lib
+    fi
+    if [ -e $(g++ --print-file-name=lib$lib.so) ]; then
+        thread_library=$lib
+    fi
 done
 if [ -z $thread_library ]; then
-	exit
+    exit
 fi
 
 rm -rf $output
