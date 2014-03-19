@@ -27,7 +27,7 @@ int average(const std::string infile, std::ostream& str, const Filter& filter, b
 			continue;
 
 		const std::string info(item.first);
-		const int average(filter.average(read));
+		const double average(filter.average(read));
 		str << ">" << info << std::endl;
 		str << average << std::endl;
 	}
@@ -326,23 +326,13 @@ void calculate_average(const std::string& filename, const std::string& mers_file
 
 int main(int argc, char** argv) {
 	std::string command(argv[0]);
-	std::string usage(
-			"usage: " + command + " filename mer_file" +
-			" [-d] [-f low_level] [-m low_frequence] [-t top_level] [-r ratio] [-a threads] [-b threads]"
-			);
-	if (argc < 3) {
-		std::cerr << usage << std::endl;
-		return 1;
-	}
-	std::string filename(argv[1]);
-	std::string mers_file(argv[2]);
+	std::string usage("usage: " + command + " filename mer_file [options]");
 
 	unsigned int top_level(0), low_level(0), low_interval(0);
 	double ratio;
 	int result;
 	unsigned int cpua(1), cpub(1);
 	bool debug(false);
-
 	using namespace boost::program_options;
 	options_description options0(""), options1("");
 	options0.add_options()
@@ -356,6 +346,16 @@ int main(int argc, char** argv) {
 	options1.add_options()
 		("average", "calculating average scores");
 	options0.add(options1);
+
+	if (argc < 3) {
+		std::cerr << usage << std::endl;
+		std::cerr << "OPTIONS" << std::endl;
+		std::cerr << options0 << std::endl;
+		return 1;
+	}
+	std::string filename(argv[1]);
+	std::string mers_file(argv[2]);
+
 	variables_map values;
 	try {
 		store(parse_command_line(argc, argv, options0), values);

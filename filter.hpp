@@ -8,11 +8,9 @@
 #include <stdexcept>
 #include <vector>
 #include <boost/lexical_cast.hpp>
-//#include <boost/unordered_map.hpp>
 #include <unordered_map>
 #include "fasta.hpp"
 
-//typedef boost::unordered_map<Read, int> mer_map;
 typedef std::unordered_map<Read, int> mer_map;
 
 class Filter {
@@ -53,9 +51,10 @@ public:
 	std::vector<unsigned int> scores(const Read& read) const;
 	bool check(std::vector<unsigned int> scores) const;
 	bool check(const Read& read) const;
-	int average(const Read& read) const;
+	double average(std::vector<unsigned int> scores) const;
+	double average(const Read& read) const;
 	void setDebug(bool);
-	int size() {
+	int size() const {
 		return this->_mer_map.size();
 	}
 };

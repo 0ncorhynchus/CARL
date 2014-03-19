@@ -1,4 +1,21 @@
-CXX = g++
+#!/bin/bash
+
+output="Makefile"
+
+thread_libraries="boost_thread boost_thread-mt"
+for lib in ${thread_libraries}; do
+	echo "checking for lib$lib.a"
+	if [ -e $(g++ --print-file-name=lib$lib.a) ]; then
+		thread_library=$lib
+	fi
+done
+if [ -z $thread_library ]; then
+	exit
+fi
+
+rm -rf $output
+
+echo 'CXX = g++
 RM = rm -f
 CPPFLAGS = -std=c++0x -g -MMD
 LINK.o = g++
@@ -27,11 +44,14 @@ all: $(build_dir) $(target)
 .PHONY: clean
 clean:
 	$(RM) $(target) $(build_dir)/*.o $(build_dir)/*.d
-	$(RM) $(test_dir)/*
+	$(RM) $(test_dir)/*' >> $output
 
-$(target): $(target_obj) $(objs)
-	$(CXX) $(CPPFLAGS) -o $@ $^ -lboost_system -lboost_thread-mt -lboost_program_options
 
+echo "
+\$(target): \$(target_obj) \$(objs)
+	\$(CXX) \$(CPPFLAGS) -o \$@ $^ -lboost_system -l$thread_library -lboost_program_options" >> $output
+
+echo '
 $(build_dir):
 	mkdir -p $@
 
@@ -54,4 +74,6 @@ $(test_dir)/%_test.o: tests/%_test.cpp %.hpp
 	$(CXX) $(CPPFLAGS) -o $@ -c $<
 
 -include $(depends)
--include $(test_depends)
+-include $(test_depends)' >> $output
+
+echo 'finished.'

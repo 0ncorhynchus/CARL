@@ -97,7 +97,7 @@ std::vector<unsigned int> Filter::scores(const Read& read) const {
 		if (!sub.isDefinite()) {
 			continue;
 		}
-		retval.push_back(_getScore(sub,0));
+		retval.push_back(_getScore(sub,_lower_level));
 	}
 	return retval;
 }
@@ -140,19 +140,22 @@ bool Filter::check(const Read& read) const {
 	return check(scores(read));
 }
 
-int Filter::average(const Read& read) const {
-	std::vector<unsigned int> scores(this->scores(read));
+double Filter::average(std::vector<unsigned int> scores) const {
 	if (scores.size() == 0) {
 		return 0;
 	}
 
-	unsigned int total(0);
+	double total(0.);
 	for (std::vector<unsigned int>::const_iterator itr(scores.begin());
 			itr != scores.end(); itr++) {
 		total += *itr;
 	}
 
 	return total/scores.size();
+}
+
+double Filter::average(const Read& read) const {
+	return average(scores(read));
 }
 
 int Filter::_getScore(const Read& read, const int default_value) const
