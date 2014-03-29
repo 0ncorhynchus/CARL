@@ -21,7 +21,6 @@ BOOST_FIXTURE_TEST_SUITE(suite, Fixture)
 BOOST_AUTO_TEST_CASE(constructor) {}
 
 bool check_exception(const Filter::MerLengthError& e) {
-    std::cout << e.what() << std::endl;
     return true;
 }
 
@@ -79,15 +78,10 @@ BOOST_AUTO_TEST_CASE(scores) {
     Fasta fasta(filename);
     Fasta::Item item(fasta.getItem());
     std::vector<unsigned int> scores(filter.scores(item.getRead()));
-    bool flg(false);
     for (std::vector<unsigned int>::const_iterator itr(scores.begin());
             itr != scores.end(); itr++) {
-        std::cout << *itr << " ";
-        if (*itr > 10)
-            flg = true;
+		BOOST_ASSERT(*itr >= 10);
     }
-    std::cout << std::endl;
-    BOOST_CHECK(flg);
 }
 
 BOOST_AUTO_TEST_CASE(check) {

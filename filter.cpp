@@ -74,7 +74,7 @@ bool Filter::join(const Filter& filter) throw(MerLengthError, LowerLevelError) {
     if (filter._lower_level != this->_lower_level) {
         std::ostringstream oss;
         oss << _lower_level << " is not " << filter._lower_level;
-        oss << ", Failed joining a filter instance";
+        oss << ", Failed joining a filter instance" << std::flush;
         throw LowerLevelError(oss.str());
     }
     if (this->_mer_length == 0) {
