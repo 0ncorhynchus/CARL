@@ -54,66 +54,66 @@ void check(const std::string infile, std::ostream& str, const Filter& filter) {
 }
 
 Filter import_mer_with_multi_thread(const std::string mers_file,
-		const Filter& parent, const int num_thread, const std::string identifier) {
-	Filter retval(parent);
-	if (num_thread <= 1) {
-		import_mer(mers_file, retval);
-	} else {
-		std::vector<std::string> filenames;
-		std::vector<Filter> filters;
-		filenames.reserve(num_thread);
-		filters.reserve(num_thread);
+        const Filter& parent, const int num_thread, const std::string identifier) {
+    Filter retval(parent);
+    if (num_thread <= 1) {
+        import_mer(mers_file, retval);
+    } else {
+        std::vector<std::string> filenames;
+        std::vector<Filter> filters;
+        filenames.reserve(num_thread);
+        filters.reserve(num_thread);
 
-		boost::thread_group threads;
-		std::ifstream ifs(mers_file);
-		std::string buff;
-		int lines(0);
-		while (ifs && getline(ifs, buff)) {
-			lines++;
-		}
-		lines /= 2;
-		ifs.close();
+        boost::thread_group threads;
+        std::ifstream ifs(mers_file);
+        std::string buff;
+        int lines(0);
+        while (ifs && getline(ifs, buff)) {
+            lines++;
+        }
+        lines /= 2;
+        ifs.close();
 
-		ifs.open(mers_file);
-		for (int i(0); i < num_thread; i++) {
-			std::ostringstream oss;
-			oss << "/tmp/filter_mer_split_" << identifier << "_" << i;
-			filenames.push_back(oss.str());
+        ifs.open(mers_file);
+        for (int i(0); i < num_thread; i++) {
+            std::ostringstream oss;
+            oss << "/tmp/filter_mer_split_" << identifier << "_" << i;
+            filenames.push_back(oss.str());
 
-			std::ofstream ofs(filenames.back());
-			for (int j(lines*i/num_thread); j < lines*(i+1)/num_thread; j++) {
+            std::ofstream ofs(filenames.back());
+            for (int j(lines*i/num_thread); j < lines*(i+1)/num_thread; j++) {
                 getline(ifs, buff);
                 ofs << buff << std::endl;
                 getline(ifs, buff);
                 ofs << buff << std::endl;
-			}
-			ofs.close();
+            }
+            ofs.close();
 
-			filters.push_back(parent);
-			threads.create_thread(boost::bind(&import_mer, filenames.back(),
-						std::ref(filters.back())));
-		}
-		ifs.close();
-		threads.join_all();
+            filters.push_back(parent);
+            threads.create_thread(boost::bind(&import_mer, filenames.back(),
+                        std::ref(filters.back())));
+        }
+        ifs.close();
+        threads.join_all();
 
-		for (int i(0); i < num_thread; i++) {
-			try {
-				retval.join(filters.at(i));
-				remove(filenames.at(i).c_str());
-			} catch(const Filter::LowerLevelError& e) {
-				std::cerr << e.what() << std::endl;
-				std::ostringstream oss;
-				oss << "./not_imported_" << identifier << "_" << i << ".fasta";
-				rename(filenames.at(i).c_str(), oss.str().c_str());
-			} catch(const Filter::MerLengthError& e) {
-				std::cerr << e.what() << std::endl;
-				std::ostringstream oss;
-				oss << "./not_imported_" << identifier << "_" << i << ".fasta";
-				rename(filenames.at(i).c_str(), oss.str().c_str());
-			}
-		}
-	}
-	return retval;
+        for (int i(0); i < num_thread; i++) {
+            try {
+                retval.join(filters.at(i));
+                remove(filenames.at(i).c_str());
+            } catch(const Filter::LowerLevelError& e) {
+                std::cerr << e.what() << std::endl;
+                std::ostringstream oss;
+                oss << "./not_imported_" << identifier << "_" << i << ".fasta";
+                rename(filenames.at(i).c_str(), oss.str().c_str());
+            } catch(const Filter::MerLengthError& e) {
+                std::cerr << e.what() << std::endl;
+                std::ostringstream oss;
+                oss << "./not_imported_" << identifier << "_" << i << ".fasta";
+                rename(filenames.at(i).c_str(), oss.str().c_str());
+            }
+        }
+    }
+    return retval;
 }
 
 void filter(const std::string& read_file, const std::string& mers_file,
@@ -129,19 +129,18 @@ void filter(const std::string& read_file, const std::string& mers_file,
     const boost::uuids::uuid id = rng();
     const std::string identifier(boost::lexical_cast<std::string>(id));
 
-	filter = import_mer_with_multi_thread(mers_file, filter, cpua, identifier);
+    filter = import_mer_with_multi_thread(mers_file, filter, cpua, identifier);
 
     if (cpub == 1) {
         check(read_file, std::cout, filter);
     } else {
-		std::vector<std::string> infiles;
-		std::vector<std::string> outfiles;
-		std::vector<std::ofstream> ostreams;
-		std::vector<Filter> filters;
-		infiles.reserve(cpub);
-		outfiles.reserve(cpub);
-		ostreams.reserve(cpub);
-		filters.reserve(cpub);
+        std::vector<std::string> infiles;
+        std::vector<std::string> outfiles;
+        std::ofstream* ostreams = new std::ofstream[cpub];
+        std::vector<Filter> filters;
+        infiles.reserve(cpub);
+        outfiles.reserve(cpub);
+        filters.reserve(cpub);
 
         boost::thread_group threads;
         std::ifstream ifs(read_file);
@@ -171,16 +170,16 @@ void filter(const std::string& read_file, const std::string& mers_file,
             }
             ofs.close();
 
-            ostreams.push_back(std::ofstream(outfiles.back().c_str()));
-			filters.push_back(filter);
+            ostreams[i].open(outfiles.back().c_str());
+            filters.push_back(filter);
             threads.create_thread(boost::bind(&check, infiles.back(),
-                        std::ref(ostreams.back()), std::ref(filters.back())));
+                        std::ref(ostreams[i]), std::ref(filters.back())));
         }
         ifs.close();
         threads.join_all();
 
         for (int i(0); i < cpub; i++) {
-			ostreams.at(i).close();
+            ostreams[i].close();
             std::ifstream tmpifs(outfiles.at(i).c_str());
             std::string buffer;
             while (tmpifs && !tmpifs.eof()) {
@@ -192,6 +191,7 @@ void filter(const std::string& read_file, const std::string& mers_file,
             remove(infiles.at(i).c_str());
             remove(outfiles.at(i).c_str());
         }
+        delete[] ostreams;
     }
 
 }
@@ -208,18 +208,17 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
     const boost::uuids::uuid id = rng();
     const std::string identifier(boost::lexical_cast<std::string>(id));
 
-	filter = import_mer_with_multi_thread(mers_file, filter, cpua, identifier);
+    filter = import_mer_with_multi_thread(mers_file, filter, cpua, identifier);
 
     if (cpub == 1) {
         average(read_file, std::cout, filter);
     } else {
-		std::vector<std::string> infiles, outfiles;
-		std::vector<std::ofstream> ostreams;
-		std::vector<Filter> filters;
-		infiles.reserve(cpub);
-		outfiles.reserve(cpub);
-		ostreams.reserve(cpub);
-		filters.reserve(cpub);
+        std::vector<std::string> infiles, outfiles;
+        std::ofstream* ostreams = new std::ofstream[cpub];
+        std::vector<Filter> filters;
+        infiles.reserve(cpub);
+        outfiles.reserve(cpub);
+        filters.reserve(cpub);
 
         boost::thread_group threads;
         std::ifstream ifs(read_file);
@@ -249,16 +248,16 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
             }
             ofs.close();
 
-			ostreams.push_back(std::ofstream(outfiles.back().c_str()));
-			filters.push_back(filter);
+            ostreams[i].open(outfiles.back().c_str());
+            filters.push_back(filter);
             threads.create_thread(boost::bind(&average, infiles.back(),
-                        std::ref(ostreams.back()), std::ref(filters.back())));
+                        std::ref(ostreams[i]), std::ref(filters.back())));
         }
         ifs.close();
         threads.join_all();
 
         for (int i(0); i < cpub; i++) {
-            ostreams.at(i).close();
+            ostreams[i].close();
             std::ifstream tmpifs(outfiles.at(i).c_str());
             std::string buffer;
             while (tmpifs && !tmpifs.eof()) {
@@ -270,6 +269,7 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
             remove(infiles.at(i).c_str());
             remove(outfiles.at(i).c_str());
         }
+        delete[] ostreams;
     }
 }
 
