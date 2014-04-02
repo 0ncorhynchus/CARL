@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(reverse) {
 
 BOOST_AUTO_TEST_CASE(getBaseAt) {
     char bases[] = {'a', 'c', 'g', 't'};
-    for (int i = 0; i < read.size(); i++) {
+    for (Read::size_type i(0); i < read.size(); i++) {
         const int at(read.getBaseAt(i));
         BOOST_ASSERT(at >= 0 && at < 4);
         BOOST_CHECK_EQUAL(bases[at], sequence_string.at(i));

@@ -4,7 +4,7 @@ const char Read::bases[4] = {'a', 'c', 'g', 't'};
 
 std::size_t hash_value(const Read& read) {
     std::size_t h(1);
-    for (int i(0); i < read.size(); i++) {
+    for (Read::size_type i(0); i < read.size(); i++) {
         h = h << 2;
         int base = read.getBaseAt(i);
         if ((base & 4) == 1) {
@@ -17,7 +17,7 @@ std::size_t hash_value(const Read& read) {
 
 Read::Read(const std::string sequence) : _size(sequence.size()) {
     unsigned char read(0), flg(0);
-    for (int i(0); i < size(); i++)
+    for (size_type i(0); i < size(); i++)
     {
         unsigned int bp(4);
         switch(sequence.at(i)) {
@@ -67,7 +67,7 @@ Read::Read(const Read& read) : _size(read.size()) {
     std::copy(read._flgs.begin(), read._flgs.end(), _flgs.begin());
 }
 
-Read::Read(const unsigned int size) : _size(size) {
+Read::Read(const size_type size) : _size(size) {
     const std::pair<unsigned int, unsigned int> sizes(_indexes(size));
     _read.resize(sizes.first+1, 0);
     _flgs.resize(sizes.second+1, 0);
@@ -76,18 +76,18 @@ Read::Read(const unsigned int size) : _size(size) {
 Read::Read() : _size(0) {
 }
 
-std::pair<unsigned int, unsigned int> Read::_indexes(unsigned int index) const {
-    std::pair<unsigned int, unsigned int> retval(0,0);
+std::pair<Read::size_type, Read::size_type> Read::_indexes(size_type index) const {
+    std::pair<size_type, size_type> retval(0,0);
     retval.first = index >> 2;
     retval.second = index >> 3;
     return retval;
 }
 
-unsigned int Read::size() const {
+Read::size_type Read::size() const {
     return this->_size;
 }
 
-unsigned char Read::getBaseAt(const unsigned int index) const
+unsigned char Read::getBaseAt(const size_type index) const
 throw(std::out_of_range) {
     if (index >= this->size())
         throw std::out_of_range("out of range in getBaseAt()");
@@ -104,7 +104,7 @@ throw(std::out_of_range) {
     return score;
 }
 
-void Read::setBaseAt(const unsigned int index, const unsigned char value)
+void Read::setBaseAt(const size_type index, const unsigned char value)
 throw(std::out_of_range) {
     if (index >= this->size())
         throw std::out_of_range("out of range in setBaseAt()");
@@ -134,12 +134,12 @@ bool Read::isDefinite() const {
     return true;
 }
 
-Read Read::sub(const unsigned int start, const unsigned int length) const throw(std::out_of_range){
+Read Read::sub(const size_type start, const size_type length) const throw(std::out_of_range){
     if (length <= 0 || start + length > this->size())
         throw std::out_of_range("out of range in sub()");
 
     Read retval(length);
-    for (int i(0); i < length; i++) {
+    for (size_type i(0); i < length; i++) {
         int base(this->getBaseAt(start + i));
         retval.setBaseAt(i, base);
     }
@@ -161,7 +161,7 @@ Read Read::reverse() const {
     if (size() == 0)
         return Read();
     Read retval(*this);
-    for (int i(0); i < size(); i++) {
+    for (size_type i(0); i < size(); i++) {
         unsigned char base(this->getBaseAt(i));
         retval.setBaseAt(size()-i-1, base);
     }
@@ -171,7 +171,7 @@ Read Read::reverse() const {
 std::string Read::tostring() const {
     std::string str("");
 
-    for (int i(0); i < size(); i++) {
+    for (size_type i(0); i < size(); i++) {
         int bp(this->getBaseAt(i));
         char ch('n');
         if (bp >= 0 && bp < 4)

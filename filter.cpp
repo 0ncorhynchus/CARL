@@ -5,7 +5,7 @@
 #include <string>
 #include "filter.hpp"
 
-Filter::Filter(int lower_level, int lower_interval, double ratio) {
+Filter::Filter(score_type lower_level, unsigned int lower_interval, double ratio) {
     this->_mer_length = 0;
     this->_lower_level = lower_level;
     this->_lower_interval = lower_interval;
@@ -28,7 +28,7 @@ Filter::Filter() {
     this->_ratio = 0.;
 }
 
-bool Filter::insertMer(const Read& read, int score) throw(MerLengthError) {
+bool Filter::insertMer(const Read& read, score_type score) throw(MerLengthError) {
     if (!read.isDefinite())
         return false;
     if (this->_mer_length == 0) {
@@ -39,11 +39,10 @@ bool Filter::insertMer(const Read& read, int score) throw(MerLengthError) {
         oss << ", Failed inserting " << read.tostring();
         throw MerLengthError(oss.str());
     } else if (score <= this->_lower_level) {
-        // score <= low level
         return false;
     }
 
-    this->_mer_map.insert(mer_map::value_type(read, score));
+    this->_mer_map.insert(map_type::value_type(read, score));
     return true;
 }
 
@@ -73,7 +72,7 @@ bool Filter::insertMers(Fasta& fasta) {
 bool Filter::join(const Filter& filter) throw(MerLengthError, LowerLevelError) {
     if (filter._lower_level != this->_lower_level) {
         std::ostringstream oss;
-        oss << _lower_level << " is not " << filter._lower_level;
+        oss << filter._lower_level << " is not " << _lower_level;
         oss << ", Failed joining a filter instance" << std::flush;
         throw LowerLevelError(oss.str());
     }
@@ -81,7 +80,7 @@ bool Filter::join(const Filter& filter) throw(MerLengthError, LowerLevelError) {
         this->_mer_length = filter._mer_length;
     } else if (filter._mer_length != this->_mer_length) {
         std::ostringstream oss;
-        oss << _mer_length << " is not " << filter._mer_length;
+        oss << filter._mer_length << " is not " << _mer_length;
         oss << ", Failed joining a filter instance";
         throw MerLengthError(oss.str());
     }
@@ -90,8 +89,8 @@ bool Filter::join(const Filter& filter) throw(MerLengthError, LowerLevelError) {
     return true;
 }
 
-std::vector<unsigned int> Filter::scores(const Read& read) const {
-    std::vector<unsigned int> retval;
+std::vector<Filter::score_type> Filter::scores(const Read& read) const {
+    std::vector<score_type> retval;
     const int length(read.size() - _mer_length + 1);
     if (_mer_length == 0 || length <= 0) {
         return retval;
@@ -106,13 +105,13 @@ std::vector<unsigned int> Filter::scores(const Read& read) const {
     return retval;
 }
 
-bool Filter::check(std::vector<unsigned int> scores) const {
+bool Filter::check(std::vector<score_type> scores) const {
     if (scores.size() == 0) {
         return false;
     }
 
-    int lower_total(0), lower_count(0);
-    int upper_total(0), upper_count(0);
+    unsigned int lower_total(0), lower_count(0);
+    unsigned int upper_total(0), upper_count(0);
 
     for (std::vector<unsigned int>::const_iterator itr(scores.begin());
             itr != scores.end(); itr++) {
@@ -144,7 +143,7 @@ bool Filter::check(const Read& read) const {
     return check(scores(read));
 }
 
-double Filter::average(std::vector<unsigned int> scores) const {
+double Filter::average(std::vector<score_type> scores) const {
     if (scores.size() == 0) {
         return 0;
     }
@@ -162,7 +161,7 @@ double Filter::average(const Read& read) const {
     return average(scores(read));
 }
 
-int Filter::_getScore(const Read& read, const int default_value) const
+int Filter::_getScore(const Read& read, const score_type default_value) const
         throw(MerLengthError){
     if (read.size() != _mer_length) {
         std::ostringstream oss;
@@ -171,11 +170,11 @@ int Filter::_getScore(const Read& read, const int default_value) const
         throw MerLengthError(oss.str());
     }
     int score(0);
-    mer_map::const_iterator itr(_mer_map.find(read));
+    map_type::const_iterator itr(_mer_map.find(read));
     if (itr != _mer_map.end()) {
         score = (*itr).second;
     } else {
-        mer_map::const_iterator comp(_mer_map.find(read.complement()));
+        map_type::const_iterator comp(_mer_map.find(read.complement()));
         if (comp != _mer_map.end()) {
             score = (*comp).second;
         } else {

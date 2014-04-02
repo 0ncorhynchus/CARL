@@ -9,9 +9,9 @@
 #include <vector>
 #include <boost/lexical_cast.hpp>
 #include <unordered_map>
+#include "read.hpp"
 #include "fasta.hpp"
 
-typedef std::unordered_map<Read, int> mer_map;
 
 class Filter {
 public:
@@ -31,26 +31,29 @@ public:
         }
     };
 
+    typedef unsigned int score_type;
+    typedef std::unordered_map<Read, score_type> map_type;
+
 private:
-    mer_map _mer_map;
-    int _mer_length;
-    int _lower_level;
-    int _lower_interval;
+    map_type _mer_map;
+    Read::size_type  _mer_length;
+    score_type _lower_level;
+    unsigned int _lower_interval;
     double _ratio;
-    int _getScore(const Read& read, const int default_value) const
+    int _getScore(const Read& read, const score_type default_value) const
         throw(MerLengthError);
 
 public:
-    Filter(int lower_level, int lower_interval, double ratio);
+    Filter(score_type lower_level, unsigned int lower_interval, double ratio);
     Filter(const Filter& filter);
     Filter();
-    bool insertMer(const Read& read, int score) throw(MerLengthError);
+    bool insertMer(const Read& read, score_type score) throw(MerLengthError);
     bool insertMers(Fasta& fasta);
     bool join(const Filter& filter) throw(MerLengthError, LowerLevelError);
-    std::vector<unsigned int> scores(const Read& read) const;
-    bool check(std::vector<unsigned int> scores) const;
+    std::vector<score_type> scores(const Read& read) const;
+    bool check(std::vector<score_type> scores) const;
     bool check(const Read& read) const;
-    double average(std::vector<unsigned int> scores) const;
+    double average(std::vector<score_type> scores) const;
     double average(const Read& read) const;
     int size() const {
         return this->_mer_map.size();

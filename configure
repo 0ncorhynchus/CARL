@@ -1,33 +1,62 @@
 #!/bin/bash
 
-output="Makefile"
+OUTPUT="Makefile"
+if [ ! -z "$CPPFLAGS" ]; then
+    CPPFLAGS="$CPPFLAGS -std=c++0x -g -MMD -Wall"
+else
+    CPPFLAGS="-std=c++0x -g -MMD -Wall"
+fi
+if [ -z "$CXX" ]; then
+    CXX="g++"
+fi
 
-if [ -e $output ]; then
+if [ -e $OUTPUT ]; then
     echo "make clean"
     make clean > /dev/null
 fi
 
+# checking for boost thread library
 thread_libraries="boost_thread-mt boost_thread"
 for lib in ${thread_libraries}; do
     echo "checking for lib$lib"
-    if [ -e $(g++ --print-file-name=lib$lib.a) ]; then
+    if [ -e $(g++ -print-file-name=lib$lib.a) ]; then
         thread_library=$lib
     fi
-    if [ -e $(g++ --print-file-name=lib$lib.so) ]; then
+    if [ -e $(g++ -print-file-name=lib$lib.so) ]; then
         thread_library=$lib
     fi
 done
 if [ -z $thread_library ]; then
-    exit
+    if [ $(uname) == "Darwin" ]; then
+        # Macintosh
+        # in Mavericks, "gcc -print-file-name" doesn't work.
+        brewlist=$(brew list)
+        echo "checking for boost library"
+        # Homebrew
+        for module in ${brewlist[@]}; do
+            if [ $module == "boost" ]; then
+                thread_library="boost_thread-mt"
+            fi
+        done
+        if [ -z $thread_library ]; then
+            echo "Please install \"boost\" via Homebrew"
+            exit
+        fi
+    else
+        echo "Please install \"boost\""
+        exit
+    fi
 fi
 
-rm -rf $output
 
-echo 'CXX = g++
-RM = rm -f
-CPPFLAGS = -std=c++0x -g -MMD
-LINK.o = g++
+rm -rf $OUTPUT
 
+echo "CXX = $CXX" >> $OUTPUT
+echo 'RM = rm -f' >> $OUTPUT
+echo "CPPFLAGS = $CPPFLAGS" >> $OUTPUT
+echo 'LINK.o = g++' >> $OUTPUT
+
+echo '
 build_dir = build
 test_dir = $(build_dir)/tests
 
@@ -52,12 +81,12 @@ all: $(build_dir) $(target)
 .PHONY: clean
 clean:
 	$(RM) $(target) $(build_dir)/*.o $(build_dir)/*.d
-	$(RM) $(test_dir)/*' >> $output
+	$(RM) $(test_dir)/*' >> $OUTPUT
 
 
 echo "
 \$(target): \$(target_obj) \$(objs)
-	\$(CXX) \$(CPPFLAGS) -o \$@ $^ -lboost_system -l$thread_library -lboost_program_options" >> $output
+	\$(CXX) \$(CPPFLAGS) -o \$@ $^ -lboost_system -l$thread_library -lboost_program_options" >> $OUTPUT
 
 echo '
 $(build_dir):
@@ -82,6 +111,6 @@ $(test_dir)/%_test.o: tests/%_test.cpp %.hpp
 	$(CXX) $(CPPFLAGS) -o $@ -c $<
 
 -include $(depends)
--include $(test_depends)' >> $output
+-include $(test_depends)' >> $OUTPUT
 
 echo 'finished.'

@@ -17,7 +17,7 @@ void import_mer(const std::string mer_file, Filter& filter) {
     filter.insertMers(mers);
 }
 
-int average(const std::string infile, std::ostream& str, const Filter& filter) {
+void average(const std::string infile, std::ostream& str, const Filter& filter) {
     Fasta fasta(infile);
     while (!fasta.eof()) {
         const std::pair<std::string, std::string> item(fasta.getItemStrings());
@@ -31,8 +31,6 @@ int average(const std::string infile, std::ostream& str, const Filter& filter) {
         str << ">" << info << std::endl;
         str << average << std::endl;
     }
-    int score(0);
-    return score;
 }
 
 void check(const std::string infile, std::ostream& str, const Filter& filter) {
@@ -153,7 +151,7 @@ void filter(const std::string& read_file, const std::string& mers_file,
         ifs.close();
 
         ifs.open(read_file);
-        for (int i(0); i < cpub; i++)
+        for (unsigned int i(0); i < cpub; i++)
         {
             std::ostringstream ioss, ooss;
             ioss << "/tmp/filter_read_splitb_" << identifier <<  "_" << i;
@@ -162,7 +160,7 @@ void filter(const std::string& read_file, const std::string& mers_file,
             outfiles.push_back(ooss.str());
 
             std::ofstream ofs(infiles.back());
-            for (int j(lines*i/cpub); j < lines*(i+1)/cpub; j++) {
+            for (unsigned int j(lines*i/cpub); j < lines*(i+1)/cpub; j++) {
                 getline(ifs, buff);
                 ofs << buff << std::endl;
                 getline(ifs, buff);
@@ -178,7 +176,7 @@ void filter(const std::string& read_file, const std::string& mers_file,
         ifs.close();
         threads.join_all();
 
-        for (int i(0); i < cpub; i++) {
+        for (unsigned int i(0); i < cpub; i++) {
             ostreams[i].close();
             std::ifstream tmpifs(outfiles.at(i).c_str());
             std::string buffer;
@@ -231,7 +229,7 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
         ifs.close();
 
         ifs.open(read_file);
-        for (int i(0); i < cpub; i++)
+        for (unsigned int i(0); i < cpub; i++)
         {
             std::ostringstream ioss, ooss;
             ioss << "/tmp/filter_read_splitb_" << identifier <<  "_" << i;
@@ -240,7 +238,7 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
             outfiles.push_back(ooss.str());
 
             std::ofstream ofs(infiles.back());
-            for (int j(lines*i/cpub); j < lines*(i+1)/cpub; j++) {
+            for (unsigned int j(lines*i/cpub); j < lines*(i+1)/cpub; j++) {
                 getline(ifs, buff);
                 ofs << buff << std::endl;
                 getline(ifs, buff);
@@ -256,7 +254,7 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
         ifs.close();
         threads.join_all();
 
-        for (int i(0); i < cpub; i++) {
+        for (unsigned int i(0); i < cpub; i++) {
             ostreams[i].close();
             std::ifstream tmpifs(outfiles.at(i).c_str());
             std::string buffer;
