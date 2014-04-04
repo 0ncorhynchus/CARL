@@ -5,6 +5,8 @@
 #include <string>
 #include "filter.hpp"
 
+namespace carl {
+
 Filter::Filter(score_type lower_level, unsigned int lower_interval, double ratio) {
     this->_mer_length = 0;
     this->_lower_level = lower_level;
@@ -184,3 +186,4 @@ int Filter::_getScore(const Read& read, const score_type default_value) const
     return score;
 }
 
+} // carl

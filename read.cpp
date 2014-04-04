@@ -1,19 +1,8 @@
 #include "read.hpp"
 
-const char Read::bases[4] = {'a', 'c', 'g', 't'};
+namespace carl {
 
-std::size_t hash_value(const Read& read) {
-    std::size_t h(1);
-    for (Read::size_type i(0); i < read.size(); i++) {
-        h = h << 2;
-        int base = read.getBaseAt(i);
-        if ((base & 4) == 1) {
-            return 0;
-        }
-        h += (std::size_t)(base & 3);
-    }
-    return h;
-}
+const char Read::bases[4] = {'a', 'c', 'g', 't'};
 
 Read::Read(const std::string sequence) : _size(sequence.size()) {
     unsigned char read(0), flg(0);
@@ -180,5 +169,20 @@ std::string Read::tostring() const {
     }
 
     return str;
+}
+
+} // carl
+
+std::size_t hash_value(const carl::Read& read) {
+    std::size_t h(1);
+    for (carl::Read::size_type i(0); i < read.size(); i++) {
+        h = h << 2;
+        int base = read.getBaseAt(i);
+        if ((base & 4) == 1) {
+            return 0;
+        }
+        h += (std::size_t)(base & 3);
+    }
+    return h;
 }
 

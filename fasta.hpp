@@ -8,6 +8,8 @@
 #include <string>
 #include "read.hpp"
 
+namespace carl {
+
 class Fasta {
 public:
     class Item {
@@ -35,5 +37,7 @@ public:
     std::pair<std::string, std::string> getItemStrings();
     bool eof() const;
 };
+
+} // carl
 
 #endif

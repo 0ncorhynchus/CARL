@@ -12,6 +12,8 @@
 
 #include "filter.hpp"
 
+using namespace carl;
+
 void import_mer(const std::string mer_file, Filter& filter) {
     Fasta mers(mer_file);
     filter.insertMers(mers);

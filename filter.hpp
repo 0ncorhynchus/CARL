@@ -12,6 +12,7 @@
 #include "read.hpp"
 #include "fasta.hpp"
 
+namespace carl {
 
 class Filter {
 public:
@@ -59,5 +60,7 @@ public:
         return this->_mer_map.size();
     }
 };
+
+} // carl
 
 #endif

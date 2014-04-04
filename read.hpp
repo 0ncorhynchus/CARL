@@ -9,6 +9,8 @@
 #include <vector>
 #include <algorithm>
 
+namespace carl {
+
 class Read {
 public:
     typedef unsigned int size_type;
@@ -53,15 +55,18 @@ private:
         throw(std::out_of_range);
 };
 
-std::size_t hash_value(const Read& read);
+} //carl
+
+std::size_t hash_value(const carl::Read& read);
 
 namespace std {
     template <>
-    struct hash<Read> {
-        std::size_t operator()(const Read& read) const {
+    struct hash<carl::Read> {
+        std::size_t operator()(const carl::Read& read) const {
             return hash_value(read);
         }
     };
 }
+
 
 #endif

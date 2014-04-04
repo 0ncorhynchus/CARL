@@ -5,6 +5,8 @@
 #include <regex.h>
 #include <iostream>
 
+namespace carl {
+
 /*
  * Fasta::Item
  */
@@ -91,3 +93,5 @@ std::pair<std::string, std::string> Fasta::getItemStrings() {
 bool Fasta::eof() const {
     return _ifs.eof();
 }
+
+} // carl
