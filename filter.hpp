@@ -39,9 +39,10 @@ private:
     map_type _mer_map;
     Read::size_type  _mer_length;
     score_type _lower_level;
+    score_type _default_score;
     unsigned int _lower_interval;
     double _ratio;
-    int _getScore(const Read& read, const score_type default_value) const
+    int _getScore(const Read& read) const
         throw(MerLengthError);
 
 public:

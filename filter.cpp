@@ -8,26 +8,29 @@
 namespace carl {
 
 Filter::Filter(score_type lower_level, unsigned int lower_interval, double ratio) {
-    this->_mer_length = 0;
-    this->_lower_level = lower_level;
-    this->_lower_interval = lower_interval;
-    this->_ratio = ratio;
+    _mer_length = 0;
+    _lower_level = lower_level;
+    _default_score = 1;
+    _lower_interval = lower_interval;
+    _ratio = ratio;
 }
 
 Filter::Filter(const Filter& filter) {
-    this->_mer_length = filter._mer_length;
-    this->_lower_level = filter._lower_level;
-    this->_lower_interval = filter._lower_interval;
-    this->_ratio = filter._ratio;
+    _mer_length = filter._mer_length;
+    _lower_level = filter._lower_level;
+    _default_score = 1;
+    _lower_interval = filter._lower_interval;
+    _ratio = filter._ratio;
 
-    this->_mer_map = filter._mer_map;
+    _mer_map = filter._mer_map;
 }
 
 Filter::Filter() {
-    this->_mer_length = 0;
-    this->_lower_level = 0;
-    this->_lower_interval = 0;
-    this->_ratio = 0.;
+    _mer_length = 0;
+    _lower_level = 0;
+    _default_score = 1;
+    _lower_interval = 0;
+    _ratio = 0.;
 }
 
 bool Filter::insertMer(const Read& read, score_type score) throw(MerLengthError) {
@@ -40,7 +43,7 @@ bool Filter::insertMer(const Read& read, score_type score) throw(MerLengthError)
         oss << _mer_length << " is not " << read.size();
         oss << ", Failed inserting " << read.tostring();
         throw MerLengthError(oss.str());
-    } else if (score <= this->_lower_level) {
+    } else if (score <= this->_default_score) {
         return false;
     }
 
@@ -102,7 +105,7 @@ std::vector<Filter::score_type> Filter::scores(const Read& read) const {
         if (!sub.isDefinite()) {
             continue;
         }
-        retval.push_back(_getScore(sub,_lower_level));
+        retval.push_back(_getScore(sub));
     }
     return retval;
 }
@@ -136,8 +139,8 @@ bool Filter::check(std::vector<score_type> scores) const {
         return true;
     }
 
-    double upper_average(double(upper_total)/upper_count),
-           lower_average(double(lower_total)/lower_count);
+    const double upper_average(double(upper_total)/upper_count),
+                 lower_average(double(lower_total)/lower_count);
     return upper_average < lower_average * _ratio;
 }
 
@@ -163,7 +166,7 @@ double Filter::average(const Read& read) const {
     return average(scores(read));
 }
 
-int Filter::_getScore(const Read& read, const score_type default_value) const
+int Filter::_getScore(const Read& read) const
         throw(MerLengthError){
     if (read.size() != _mer_length) {
         std::ostringstream oss;
@@ -180,7 +183,7 @@ int Filter::_getScore(const Read& read, const score_type default_value) const
         if (comp != _mer_map.end()) {
             score = (*comp).second;
         } else {
-            return default_value;
+            return _default_score;
         }
     }
     return score;

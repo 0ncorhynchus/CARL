@@ -53,6 +53,26 @@ void check(const std::string infile, std::ostream& str, const Filter& filter) {
     }
 }
 
+void output_scores(const std::string infile, std::ostream& str, const Filter& filter) {
+    Fasta fasta(infile);
+    while (!fasta.eof()) {
+        std::pair<std::string, std::string> item(fasta.getItemStrings());
+        Read read(item.second);
+
+        if (read.size() == 0)
+            continue;
+
+        const std::string info(item.first);
+        std::vector<Filter::score_type> scores(filter.scores(read));
+        str << ">" << info << std::endl;
+        for (std::vector<Filter::score_type>::const_iterator itr(scores.begin());
+                itr != scores.end(); itr++) {
+            str << *itr << " ";
+        }
+        str << std::endl;
+    }
+}
+
 Filter import_mer_with_multi_thread(const std::string mers_file,
         const Filter& parent, const int num_thread, const std::string identifier) {
     Filter retval(parent);
@@ -123,8 +143,7 @@ void filter(const std::string& read_file, const std::string& mers_file,
     Filter filter(lower_level, low_interval, ratio);
 
     /*
-     * Importing mer from a file
-     */
+     * Importing mer from a file */
     boost::uuids::random_generator rng;
     const boost::uuids::uuid id = rng();
     const std::string identifier(boost::lexical_cast<std::string>(id));
@@ -273,6 +292,83 @@ void calculate_average(const std::string& read_file, const std::string& mers_fil
     }
 }
 
+void list_scores(const std::string& read_file, const std::string& mers_file,
+        const unsigned int& cpua, const unsigned int& cpub) {
+
+    Filter filter(1,0,0);
+
+    /*
+     * Importing mer from a file
+     */
+    boost::uuids::random_generator rng;
+    const boost::uuids::uuid id = rng();
+    const std::string identifier(boost::lexical_cast<std::string>(id));
+
+    filter = import_mer_with_multi_thread(mers_file, filter, cpua, identifier);
+
+    if (cpub == 1) {
+        output_scores(read_file, std::cout, filter);
+    } else {
+        std::vector<std::string> infiles, outfiles;
+        std::ofstream* ostreams = new std::ofstream[cpub];
+        std::vector<Filter> filters;
+        infiles.reserve(cpub);
+        outfiles.reserve(cpub);
+        filters.reserve(cpub);
+
+        boost::thread_group threads;
+        std::ifstream ifs(read_file);
+        std::string buff;
+        int lines(0);
+        while (ifs && getline(ifs, buff)) {
+            lines++;
+        }
+        lines /= 2;
+        ifs.close();
+
+        ifs.open(read_file);
+        for (unsigned int i(0); i < cpub; i++)
+        {
+            std::ostringstream ioss, ooss;
+            ioss << "/tmp/filter_read_splitb_" << identifier <<  "_" << i;
+            ooss << "/tmp/filter_read_split_out_" << identifier << "_" << i;
+            infiles.push_back(ioss.str());
+            outfiles.push_back(ooss.str());
+
+            std::ofstream ofs(infiles.back());
+            for (unsigned int j(lines*i/cpub); j < lines*(i+1)/cpub; j++) {
+                getline(ifs, buff);
+                ofs << buff << std::endl;
+                getline(ifs, buff);
+                ofs << buff << std::endl;
+            }
+            ofs.close();
+
+            ostreams[i].open(outfiles.back().c_str());
+            filters.push_back(filter);
+            threads.create_thread(boost::bind(&output_scores, infiles.back(),
+                        std::ref(ostreams[i]), std::ref(filters.back())));
+        }
+        ifs.close();
+        threads.join_all();
+
+        for (unsigned int i(0); i < cpub; i++) {
+            ostreams[i].close();
+            std::ifstream tmpifs(outfiles.at(i).c_str());
+            std::string buffer;
+            while (tmpifs && !tmpifs.eof()) {
+                if (getline(tmpifs, buffer)) {
+                    std::cout << buffer << std::endl;
+                }
+            }
+            tmpifs.close();
+            remove(infiles.at(i).c_str());
+            remove(outfiles.at(i).c_str());
+        }
+        delete[] ostreams;
+    }
+}
+
 int main(int argc, char** argv) {
     std::string command(argv[0]);
     std::string usage("usage: " + command + " read_file mer_file [options]");
@@ -281,7 +377,7 @@ int main(int argc, char** argv) {
     double ratio;
     unsigned int cpua(1), cpub(1);
     using namespace boost::program_options;
-    options_description options0(""), options1("");
+    options_description options0(""), options1(""), options2("");
     options0.add_options()
         (",f", value<unsigned int>(&lower_level), "lower_level")
         (",m", value<unsigned int>(&low_interval), "low_frequence")
@@ -289,8 +385,11 @@ int main(int argc, char** argv) {
         (",a", value<unsigned int>(&cpua)->default_value(1), "threads for creating maps")
         (",b", value<unsigned int>(&cpub)->default_value(1), "threads for calculating");
     options1.add_options()
-        ("average", "calculating average scores");
+        ("average", "calculate average scores");
     options0.add(options1);
+    options2.add_options()
+        ("scores", "list mer scores");
+    options0.add(options2);
 
     if (argc < 3) {
         std::cerr << usage << std::endl;
@@ -307,6 +406,8 @@ int main(int argc, char** argv) {
         notify(values);
         if (values.count("average")) {
             calculate_average(read_file, mers_file, cpua, cpub);
+        } else if(values.count("scores")) {
+            list_scores(read_file, mers_file, cpua, cpub);
         } else {
             filter(read_file, mers_file, lower_level, low_interval, ratio, cpua, cpub);
         }
