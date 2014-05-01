@@ -4,6 +4,8 @@
 
 #include "../filter.hpp"
 
+using namespace carl;
+
 struct Fixture {
     const std::string filename, countname;
     Filter filter;
@@ -80,7 +82,8 @@ BOOST_AUTO_TEST_CASE(scores) {
     std::vector<unsigned int> scores(filter.scores(item.getRead()));
     for (std::vector<unsigned int>::const_iterator itr(scores.begin());
             itr != scores.end(); itr++) {
-		BOOST_ASSERT(*itr >= 10);
+        std::cerr << *itr << ' ' << std::endl;
+        BOOST_ASSERT(*itr >= 10);
     }
 }
 

@@ -7,6 +7,8 @@
 #include <algorithm>
 #include "../fasta.hpp"
 
+using namespace carl;
+
 struct Fixture {
     const std::string filename;
     Fasta fasta;

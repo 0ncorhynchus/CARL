@@ -5,6 +5,8 @@
 #include <string>
 #include "../read.hpp"
 
+using namespace carl;
+
 struct Fixture {
     const std::string sequence_string;
     const std::string complement_string;
