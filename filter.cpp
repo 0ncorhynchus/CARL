@@ -179,7 +179,7 @@ int Filter::_getScore(const Read& read) const
     if (itr != _mer_map.end()) {
         score = (*itr).second;
     } else {
-        map_type::const_iterator comp(_mer_map.find(read.complement()));
+        map_type::const_iterator comp(_mer_map.find(read.reverse().complement()));
         if (comp != _mer_map.end()) {
             score = (*comp).second;
         } else {
